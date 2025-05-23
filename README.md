@@ -15,7 +15,7 @@
 
 ## 🖼️ Sample Visualization
 
-![Route Map](https://raw.githubusercontent.com/<your-username>/Air-Route-Optimiser/main/assets/route_map.png)
+![My Image](https://drive.google.com/uc?export=view&id=1KNcn3QI3m8X5XgLc8U9xaH6ZcA2MbXD8)
 
 > *Visualizing American Airlines flight paths using codeshare classification.*
 
