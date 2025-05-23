@@ -39,3 +39,20 @@
 
 ## 📁 Directory Structure
 
+
+---
+
+## 🚀 How to Run
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/<your-username>/Air-Route-Optimiser.git
+   cd Air-Route-Optimiser
+
+pip install -r requirements.txt
+
+python src/visualize_routes.py
+
+
+Let me know if you need this in a downloadable `.md` file or want to add deployment instructions.
+
