@@ -1,58 +1,72 @@
 # ✈️ Air Route Optimiser
 
-**Optimizing Air Traffic Routes Through Data Visualization and Geospatial Analysis**
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Python](https://img.shields.io/badge/python-3.9%2B-blue) ![AI](https://img.shields.io/badge/built%20with-AI%20%26%20ML-success)
-
----
-
-## 📌 Project Overview
-
-**Air Route Optimiser** is a data-driven research project aimed at improving the efficiency and safety of air traffic systems using artificial intelligence and geospatial data analysis. By leveraging deep learning techniques and visual analytics, the system is capable of optimizing flight routes, reducing congestion, and providing real-time decision support for air traffic management.
-
-> 🔬 This project was submitted for presentation at the **SAI VIDYA Institute of Science and Technology International Conference (2025)** and is awaiting review.
+[![Python](https://img.shields.io/badge/Python-3.10-blue.svg)](https://www.python.org/)
+[![Colab](https://img.shields.io/badge/Open-In-Colab-orange?logo=googlecolab)](https://colab.research.google.com/drive/1b04Oaf-gAJcrj9BmpBgT6tubJ5huwxmm?usp=sharing)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform](https://img.shields.io/badge/Platform-Google%20Colab-green.svg)](https://colab.research.google.com)
 
 ---
 
-## 🎯 Key Features
+## 📍 Project Overview
 
-- ✅ **Route Optimization**: AI-powered predictions to suggest optimal air routes.
-- 🗺️ **Geospatial Mapping**: Real-time visualization of flight paths using latitude/longitude data.
-- 📊 **Interactive Dashboards**: Insightful charts and analysis on traffic density and bottlenecks.
-- 🧠 **Deep Learning Models**: Built using CNN and ResNet-based architectures.
-- 🔍 **Explainable AI (XAI)**: Integrated Grad-CAM for model transparency.
-- 🌱 **Sustainable Development Goals (SDGs)**: Supports UN SDG 9 & 13 for industry innovation and climate action.
+**Air Route Optimiser** is a data-driven project designed to optimize air traffic routes using geospatial analysis and interactive data visualizations. It helps identify efficient flight paths, analyze route congestion, and support decision-making using mapped data.
 
 ---
 
-## ⚙️ Tech Stack
+## 🖼️ Sample Visualization
 
-| Category         | Tools Used                          |
-|------------------|-------------------------------------|
-| Programming      | Python                              |
-| Frameworks       | TensorFlow, Keras                   |
-| Libraries        | OpenCV, NumPy, Pandas, Matplotlib   |
-| Visualization    | Folium, Geopandas, Plotly           |
-| IDE/Platform     | Google Colab, Jupyter Notebook      |
+![Route Map](https://raw.githubusercontent.com/<your-username>/Air-Route-Optimiser/main/assets/route_map.png)
+
+> *Visualizing American Airlines flight paths using codeshare classification.*
 
 ---
 
-## 📁 Directory Structure
+## 🚀 Features
+
+- 📊 Interactive maps of airline routes
+- 🌍 Geospatial plots using `folium` and `plotly`
+- 🧹 Data cleaning and preprocessing
+- ⚙️ Modular structure for easy upgrades
+- 🔍 Advanced visual analytics (planned)
+
+---
+
+## 🛠️ Tech Stack
+
+- **Languages**: Python  
+- **Visualization**: Plotly, Matplotlib, Folium, Seaborn  
+- **Libraries**: Pandas, NumPy, Geopandas  
+- **Platform**: Google Colab
+
+---
+
+## 📁 Project Structure
 
 
 ---
 
-## 🚀 How to Run
+## 🔗 Useful Links
 
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/<your-username>/Air-Route-Optimiser.git
-   cd Air-Route-Optimiser
+- 📓 [Colab Notebook](https://colab.research.google.com/drive/1b04Oaf-gAJcrj9BmpBgT6tubJ5huwxmm?usp=sharing)
+- 🌐 [Author Portfolio](https://delightful-sprite-cc7809.netlify.app/)
+- 🧑‍💼 [LinkedIn](https://www.linkedin.com/in/shiva-santosh-2489bb25a/)
+- 💻 [GitHub Profile](https://github.com/Santosh-sunkara)
 
-pip install -r requirements.txt
+---
 
-python src/visualize_routes.py
+## 🧠 Future Roadmap
 
+- ✅ Model-based optimization using ML
+- ✅ Compare shortest vs optimized paths
+- ⌛ Web-based visualization tool
+- ⌛ Route congestion heatmaps
 
-Let me know if you need this in a downloadable `.md` file or want to add deployment instructions.
+---
 
+## 🤝 Contributing
+
+Want to contribute? Follow these steps:
+
+```bash
+git clone https://github.com/<your-username>/Air-Route-Optimiser.git
+cd Air-Route-Optimiser
