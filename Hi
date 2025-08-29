@@ -1,0 +1,254 @@
+Awesome—let’s do this from absolute basics. Follow these steps in order. Copy-paste where I say “Run this”.
+
+# 1) Create DB + table in pgAdmin4
+
+1. Open **pgAdmin4** → connect to your server.
+2. Right-click **Databases → Create → Database…**
+
+   * Name: `mydb`
+3. Open **Tools → Query Tool** on `mydb` and run:
+
+```sql
+-- optional: create a dedicated DB user
+CREATE USER appuser WITH PASSWORD 'app@123';
+
+-- give permissions
+GRANT ALL PRIVILEGES ON DATABASE mydb TO appuser;
+
+-- connect to mydb (run only if needed)
+-- \c mydb
+
+-- create the admin table
+CREATE TABLE IF NOT EXISTS admin (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(100) NOT NULL,
+  email VARCHAR(150) UNIQUE NOT NULL,
+  password VARCHAR(200) NOT NULL
+);
+
+-- (optional) test row
+INSERT INTO admin (username, email, password)
+VALUES ('firstadmin', 'first@admin.com', 'test123');
+```
+
+> Tip: For real apps, store **hashed** passwords. For learning, plain text is okay.
+
+---
+
+# 2) Create Spring Boot project in IntelliJ (Maven)
+
+1. IntelliJ → **New Project → Spring Initializr**
+
+   * Dependencies: **Spring Web**, **Spring Data JPA**
+2. Finish → open the project.
+
+**Add these dependencies** to `pom.xml` (inside `<dependencies>`):
+
+```xml
+<!-- PostgreSQL driver -->
+<dependency>
+  <groupId>org.postgresql</groupId>
+  <artifactId>postgresql</artifactId>
+  <version>42.7.3</version>
+</dependency>
+
+<!-- Swagger UI (springdoc) -->
+<dependency>
+  <groupId>org.springdoc</groupId>
+  <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+  <version>2.5.0</version>
+</dependency>
+```
+
+Then **Reload Maven**.
+
+---
+
+# 3) Configure database connection
+
+Create `src/main/resources/application.properties`:
+
+```properties
+# --- Server ---
+server.port=8080
+
+# --- PostgreSQL ---
+spring.datasource.url=jdbc:postgresql://localhost:5432/mydb
+spring.datasource.username=appuser
+spring.datasource.password=app@123
+
+# --- JPA / Hibernate ---
+spring.jpa.hibernate.ddl-auto=update   # keeps table if it exists; creates if missing
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# --- Swagger UI path ---
+springdoc.swagger-ui.path=/swagger-ui.html
+```
+
+---
+
+# 4) Create the JPA Entity
+
+`src/main/java/.../model/Admin.java`
+
+```java
+package your.package.model;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "admin")
+public class Admin {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable=false, length=100)
+    private String username;
+
+    @Column(nullable=false, unique=true, length=150)
+    private String email;
+
+    @Column(nullable=false, length=200)
+    private String password;
+
+    // getters & setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+}
+```
+
+---
+
+# 5) Repository
+
+`src/main/java/.../repo/AdminRepository.java`
+
+```java
+package your.package.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import your.package.model.Admin;
+
+public interface AdminRepository extends JpaRepository<Admin, Long> {
+    boolean existsByEmail(String email);
+}
+```
+
+---
+
+# 6) Controller (simple CRUD)
+
+`src/main/java/.../controller/AdminController.java`
+
+```java
+package your.package.controller;
+
+import org.springframework.web.bind.annotation.*;
+import your.package.model.Admin;
+import your.package.repo.AdminRepository;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/admins")
+public class AdminController {
+
+    private final AdminRepository repo;
+
+    public AdminController(AdminRepository repo) {
+        this.repo = repo;
+    }
+
+    // Create
+    @PostMapping
+    public Admin create(@RequestBody Admin admin) {
+        return repo.save(admin);
+    }
+
+    // Read all
+    @GetMapping
+    public List<Admin> findAll() {
+        return repo.findAll();
+    }
+
+    // Read one
+    @GetMapping("/{id}")
+    public Admin findOne(@PathVariable Long id) {
+        return repo.findById(id).orElse(null);
+    }
+
+    // Update
+    @PutMapping("/{id}")
+    public Admin update(@PathVariable Long id, @RequestBody Admin in) {
+        Admin a = repo.findById(id).orElseThrow();
+        a.setUsername(in.getUsername());
+        a.setEmail(in.getEmail());
+        a.setPassword(in.getPassword());
+        return repo.save(a);
+    }
+
+    // Delete
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+        repo.deleteById(id);
+        return "Admin deleted";
+    }
+}
+```
+
+---
+
+# 7) Run & test
+
+1. Run the application (`YourAppApplication.main()`).
+
+2. Open **Swagger UI** in your browser:
+   `http://localhost:8080/swagger-ui.html`
+   (It redirects to `/swagger-ui/index.html`—that’s fine.)
+
+3. Expand **/api/admins** endpoints → click **Try it out** to test:
+
+   * **POST /api/admins**
+     Body example:
+
+     ```json
+     { "username": "shiva", "email": "shiva@example.com", "password": "secret" }
+     ```
+   * **GET /api/admins** (see list)
+   * **PUT /api/admins/{id}**
+   * **DELETE /api/admins/{id}**
+
+4. In pgAdmin4, verify:
+
+```sql
+SELECT * FROM admin;
+```
+
+---
+
+# 8) Common errors (and quick fixes)
+
+* **`FATAL: password authentication failed`**
+  → Username/password in `application.properties` must match your Postgres user.
+* **`relation "admin" does not exist`**
+  → Ensure table exists OR keep `ddl-auto=update` so JPA creates it.
+* **Port in use**
+  → Change `server.port` to another (e.g., 8081).
+* **Swagger 404**
+  → Ensure the springdoc dependency is in `pom.xml` and app restarted. Try both `/swagger-ui.html` and `/swagger-ui/index.html`.
+
+---
+
+If you want, I can also give you a **ready-to-paste cURL/Postman collection** for these endpoints, or convert this to a small GitHub repo structure for you to follow.
