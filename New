@@ -1,10 +1,101 @@
-<dependency>
-    <groupId>org.postgresql</groupId>
-    <artifactId>postgresql</artifactId>
-    <version>42.7.3</version>
-</dependency>
-<dependency>
-    <groupId>org.springdoc</groupId>
-    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-    <version>2.5.0</version>
-</dependency>
+spring.datasource.url=jdbc:postgresql://localhost:5432/your_database
+spring.datasource.username=your_user
+spring.datasource.password=your_password   # if not required, skip
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+
+
+
+package com.example.demo.model;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "admin")   // this table will be created automatically
+public class Admin {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 80)
+    private String username;
+
+    @Column(nullable = false, unique = true, length = 120)
+    private String email;
+
+    @Column(nullable = false, length = 40)
+    private String role = "USER";
+
+    // constructor
+    public Admin() {}
+
+    public Admin(String username, String email, String role) {
+        this.username = username;
+        this.email = email;
+        this.role = role;
+    }
+
+    // getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+}
+
+
+
+
+
+
+
+package com.example.demo.repository;
+
+import com.example.demo.model.Admin;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface AdminRepository extends JpaRepository<Admin, Long> {
+}
+
+
+
+
+
+
+package com.example.demo;
+
+import com.example.demo.model.Admin;
+import com.example.demo.repository.AdminRepository;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+@SpringBootApplication
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @Bean
+    CommandLineRunner run(AdminRepository repo) {
+        return args -> {
+            // Insert row
+            repo.save(new Admin("shiva", "shiva@example.com", "ADMIN"));
+
+            // Fetch rows
+            repo.findAll().forEach(a -> 
+                System.out.println(a.getId() + " " + a.getUsername() + " " + a.getEmail())
+            );
+        };
+    }
+}
