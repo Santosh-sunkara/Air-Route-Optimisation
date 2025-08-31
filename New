@@ -1,6 +1,22 @@
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+
+<dependency>
+  <groupId>org.postgresql</groupId>
+  <artifactId>postgresql</artifactId>
+  <scope>runtime</scope>
+</dependency>
+
+
+
+
+
 spring.datasource.url=jdbc:postgresql://localhost:5432/your_database
 spring.datasource.username=your_user
-spring.datasource.password=your_password   # if not required, skip
+spring.datasource.password=your_password
+
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
@@ -8,12 +24,14 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
 
 
-package com.example.demo.model;
+
+
+package com.scb.axessspringboottraining.Entities;
 
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "admin")   // this table will be created automatically
+@Table(name = "admin")   // table name in pgAdmin
 public class Admin {
 
     @Id
@@ -29,16 +47,15 @@ public class Admin {
     @Column(nullable = false, length = 40)
     private String role = "USER";
 
-    // constructor
+    // Constructors
     public Admin() {}
-
     public Admin(String username, String email, String role) {
         this.username = username;
         this.email = email;
         this.role = role;
     }
 
-    // getters and setters
+    // Getters & setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -57,10 +74,9 @@ public class Admin {
 
 
 
+package com.scb.axessspringboottraining.dao;
 
-package com.example.demo.repository;
-
-import com.example.demo.model.Admin;
+import com.scb.axessspringboottraining.Entities.Admin;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AdminRepository extends JpaRepository<Admin, Long> {
@@ -71,31 +87,64 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
 
 
 
-package com.example.demo;
 
-import com.example.demo.model.Admin;
-import com.example.demo.repository.AdminRepository;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
+package com.scb.axessspringboottraining.controller;
 
-@SpringBootApplication
-public class DemoApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
+import com.scb.axessspringboottraining.Entities.Admin;
+import com.scb.axessspringboottraining.dao.AdminRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/admins")
+public class AdminController {
+
+    private final AdminRepository repo;
+
+    public AdminController(AdminRepository repo) {
+        this.repo = repo;
     }
 
-    @Bean
-    CommandLineRunner run(AdminRepository repo) {
-        return args -> {
-            // Insert row
-            repo.save(new Admin("shiva", "shiva@example.com", "ADMIN"));
+    // CREATE
+    @PostMapping
+    public Admin create(@RequestBody Admin admin) {
+        return repo.save(admin);
+    }
 
-            // Fetch rows
-            repo.findAll().forEach(a -> 
-                System.out.println(a.getId() + " " + a.getUsername() + " " + a.getEmail())
-            );
-        };
+    // READ ALL
+    @GetMapping
+    public List<Admin> getAll() {
+        return repo.findAll();
+    }
+
+    // READ ONE
+    @GetMapping("/{id}")
+    public ResponseEntity<Admin> getOne(@PathVariable Long id) {
+        return repo.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // UPDATE
+    @PutMapping("/{id}")
+    public ResponseEntity<Admin> update(@PathVariable Long id, @RequestBody Admin admin) {
+        return repo.findById(id)
+                .map(existing -> {
+                    existing.setUsername(admin.getUsername());
+                    existing.setEmail(admin.getEmail());
+                    existing.setRole(admin.getRole());
+                    return ResponseEntity.ok(repo.save(existing));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // DELETE
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (!repo.existsById(id)) return ResponseEntity.notFound().build();
+        repo.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
