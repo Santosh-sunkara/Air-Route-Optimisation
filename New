@@ -1,72 +1,35 @@
-<dependency>
-  <groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-starter-data-jpa</artifactId>
-</dependency>
-
-<dependency>
-  <groupId>org.postgresql</groupId>
-  <artifactId>postgresql</artifactId>
-  <scope>runtime</scope>
-</dependency>
-
-
-
-
-
-spring.datasource.url=jdbc:postgresql://localhost:5432/your_database
-spring.datasource.username=your_user
-spring.datasource.password=your_password
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-
-
-
-
-
-
-package com.scb.axessspringboottraining.Entities;
+package com.example.myproject.entity;
 
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "admin")   // table name in pgAdmin
-public class Admin {
+@Table(name = "users")
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 80)
-    private String username;
+    @Column(nullable = false)
+    private String name;
 
-    @Column(nullable = false, unique = true, length = 120)
+    @Column(unique = true)
     private String email;
 
-    @Column(nullable = false, length = 40)
-    private String role = "USER";
+    private int age;
 
-    // Constructors
-    public Admin() {}
-    public Admin(String username, String email, String role) {
-        this.username = username;
-        this.email = email;
-        this.role = role;
-    }
-
-    // Getters & setters
+    // Getters & Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public int getAge() { return age; }
+    public void setAge(int age) { this.age = age; }
 }
 
 
@@ -74,12 +37,13 @@ public class Admin {
 
 
 
-package com.scb.axessspringboottraining.dao;
 
-import com.scb.axessspringboottraining.Entities.Admin;
+package com.example.myproject.repository;
+
+import com.example.myproject.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface AdminRepository extends JpaRepository<Admin, Long> {
+public interface UserRepository extends JpaRepository<User, Long> {
 }
 
 
@@ -88,63 +52,54 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
 
 
 
-package com.scb.axessspringboottraining.controller;
 
-import com.scb.axessspringboottraining.Entities.Admin;
-import com.scb.axessspringboottraining.dao.AdminRepository;
-import org.springframework.http.ResponseEntity;
+
+package com.example.myproject.controller;
+
+import com.example.myproject.entity.User;
+import com.example.myproject.repository.UserRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/admins")
-public class AdminController {
+@RequestMapping("/users")
+public class UserController {
 
-    private final AdminRepository repo;
+    private final UserRepository userRepository;
 
-    public AdminController(AdminRepository repo) {
-        this.repo = repo;
+    public UserController(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
-    // CREATE
     @PostMapping
-    public Admin create(@RequestBody Admin admin) {
-        return repo.save(admin);
+    public User createUser(@RequestBody User user) {
+        return userRepository.save(user);
     }
 
-    // READ ALL
     @GetMapping
-    public List<Admin> getAll() {
-        return repo.findAll();
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
-    // READ ONE
     @GetMapping("/{id}")
-    public ResponseEntity<Admin> getOne(@PathVariable Long id) {
-        return repo.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public User getUser(@PathVariable Long id) {
+        return userRepository.findById(id).orElse(null);
     }
 
-    // UPDATE
     @PutMapping("/{id}")
-    public ResponseEntity<Admin> update(@PathVariable Long id, @RequestBody Admin admin) {
-        return repo.findById(id)
-                .map(existing -> {
-                    existing.setUsername(admin.getUsername());
-                    existing.setEmail(admin.getEmail());
-                    existing.setRole(admin.getRole());
-                    return ResponseEntity.ok(repo.save(existing));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public User updateUser(@PathVariable Long id, @RequestBody User newUser) {
+        return userRepository.findById(id).map(user -> {
+            user.setName(newUser.getName());
+            user.setEmail(newUser.getEmail());
+            user.setAge(newUser.getAge());
+            return userRepository.save(user);
+        }).orElse(null);
     }
 
-    // DELETE
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!repo.existsById(id)) return ResponseEntity.notFound().build();
-        repo.deleteById(id);
-        return ResponseEntity.noContent().build();
+    public String deleteUser(@PathVariable Long id) {
+        userRepository.deleteById(id);
+        return "User deleted!";
     }
 }
