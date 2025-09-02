@@ -1,1 +1,28 @@
-ss
+package com.scb.axessspringboottraining.controller;
+
+import com.scb.axessspringboottraining.entities.AdminLogin;
+import com.scb.axessspringboottraining.dao.Adminlogindata;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/admins")
+@CrossOrigin(origins = "*")
+public class AdminWriteController {
+
+    private final Adminlogindata repo;
+
+    public AdminWriteController(Adminlogindata repo) {
+        this.repo = repo;
+    }
+
+    // POST /api/admins  -> create a new admin
+    @PostMapping
+    public ResponseEntity<AdminLogin> createAdmin(@RequestBody AdminLogin admin) {
+        // If email is the @Id in your AdminLogin entity, repo.save will insert/upsert
+        AdminLogin saved = repo.save(admin);
+        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+    }
+}
+
