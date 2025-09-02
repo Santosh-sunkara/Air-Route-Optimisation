@@ -1,11 +1,35 @@
-{
-  "email": "admin1@sc.com",
-  "firstname": "John",
-  "lastname": "Doe",
-  "accounttype": "Admin",
-  "password": "pass123",
-  "status": "Active"
+package com.scb.axessspringboottraining.controller;
+
+import com.scb.axessspringboottraining.entities.AdminLogin;
+import com.scb.axessspringboottraining.dao.Adminlogindata;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/admins")
+@CrossOrigin(origins = "*")
+public class AdminWriteController {
+
+    private final Adminlogindata repo;
+
+    public AdminWriteController(Adminlogindata repo) {
+        this.repo = repo;
+    }
+
+    // POST /api/admins -> create a new admin
+    @PostMapping
+    public ResponseEntity<AdminLogin> createAdmin(@RequestBody AdminLogin admin) {
+        AdminLogin saved = repo.save(admin);
+        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+    }
+
+    // GET /api/admins -> fetch all admins
+    @GetMapping
+    public ResponseEntity<List<AdminLogin>> getAllAdmins() {
+        List<AdminLogin> admins = repo.findAll();
+        return new ResponseEntity<>(admins, HttpStatus.OK);
+    }
 }
-
-
-http://localhost:8080/api/admins
