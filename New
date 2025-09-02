@@ -1,1 +1,11 @@
-ss
+{
+  "email": "admin1@sc.com",
+  "firstname": "John",
+  "lastname": "Doe",
+  "accounttype": "Admin",
+  "password": "pass123",
+  "status": "Active"
+}
+
+
+http://localhost:8080/api/admins
