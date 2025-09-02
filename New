@@ -1,241 +1,101 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import logo from "../Assests/Admin.jpg";
-import bgImage from "../Assests/bg-4.jpg";
+import React from "react";
+import "./AdminSettingsUI.css";
+import logo from "../../Assests/sclogoshiva.png";
+import { Link } from "react-router-dom";
 
-function Adminlogin() {
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
-
-    const [message, setMessage] = useState("");
-    const navigate = useNavigate();
-
-    const handleInputChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await axios.post("http://localhost:8080/api/userlogin/adminlogin", formData);
-
-            console.log("Login response:", res.data);
-
-            if (res.data && res.data.email) {
-                // store user object in localStorage
-                localStorage.setItem("user", JSON.stringify(res.data));
-                setMessage("Login successful!");
-                navigate("/AdminDashboard"); // redirect after success
-            } else {
-                setMessage(res.data || "Invalid login credentials");
-            }
-        } catch (err) {
-            console.error(err);
-            setMessage("Server error. Please try again.");
-        }
-
-        console.log('Form submitted:', formData);
-    };
-
+export default function AdminSettingsUI() {
     return (
-        <div className="login-container">
-            <style jsx>{`
-                .login-container {
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background-image: url('${bgImage}');
-                    background-size: cover;
-                    background-position: center;
-                    background-repeat: no-repeat;
-                    background-attachment: fixed;
-                    position: relative;
-                    overflow: hidden;
-                }
-
-                .login-card {
-                    background: rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(10px);
-                    border-radius: 20px;
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    padding: 40px;
-                    width: 400px;
-                    text-align: center;
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                    position: relative;
-                    z-index: 10;
-                    animation: fadeInUp 0.8s ease;
-                }
-
-                @keyframes fadeInUp {
-                    from {
-                        opacity: 0;
-                        transform: translateY(30px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-
-                .logo {
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 50%;
-                    margin: 0 auto 20px;
-                    object-fit: cover;
-                }
-
-                .login-title {
-                    color: white;
-                    font-size: 32px;
-                    font-weight: bold;
-                    margin-bottom: 40px;
-                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-                }
-
-                .input-group {
-                    position: relative;
-                    margin-bottom: 25px;
-                }
-
-                .form-input {
-                    width: 100%;
-                    padding: 15px 50px 15px 20px;
-                    background: rgba(255, 255, 255, 0.1);
-                    border: 1px solid rgba(255, 255, 255, 0.3);
-                    border-radius: 50px;
-                    color: white;
-                    font-size: 16px;
-                    outline: none;
-                    transition: all 0.3s ease;
-                    backdrop-filter: blur(5px);
-                }
-
-                .form-input::placeholder {
-                    color: rgba(255, 255, 255, 0.7);
-                }
-
-                .form-input:focus {
-                    border-color: rgba(255, 255, 255, 0.6);
-                    background: rgba(255, 255, 255, 0.15);
-                    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-                }
-
-                .login-button {
-                    width: 100%;
-                    padding: 15px;
-                    background: rgba(255, 255, 255, 0.9);
-                    color: #333;
-                    border: none;
-                    border-radius: 50px;
-                    font-size: 18px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    margin: 20px 0;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                    display: inline-block;
-                    box-sizing: border-box;
-                }
-
-                .login-button:hover {
-                    background: white;
-                    transform: translateY(-2px);
-                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-                    color: #333;
-                }
-
-                .forgot-link {
-                    color: rgba(255, 255, 255, 0.9);
-                    text-decoration: none;
-                    font-size: 14px;
-                    display: block;
-                    text-align: center;
-                    margin: 20px 0;
-                }
-
-                .forgot-link:hover {
-                    color: white;
-                    text-decoration: underline;
-                }
-
-                .register-text {
-                    color: rgba(255, 255, 255, 0.8);
-                    margin-top: 20px;
-                    font-size: 14px;
-                }
-
-                .register-link {
-                    color: white;
-                    text-decoration: underline;
-                    font-weight: bold;
-                }
-
-                .register-link:hover {
-                    color: #ffd700;
-                }
-            `}</style>
-
-            <div className="login-card">
-                <img src={logo} alt="Admin Logo" className="logo" />
-                <h2 className="login-title">Admin Login</h2>
-
-                <form onSubmit={handleSubmit}>
-                    <div className="input-group">
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            placeholder="Email"
-                            className="form-input"
-                            required
-                        />
-                    </div>
-
-                    <div className="input-group">
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            placeholder="Password"
-                            className="form-input"
-                            required
-                        />
-                    </div>
-
-                    <Link to="/ForgotPassword" className="forgot-link">
-                        Forgot password?
-                    </Link>
-
-                    {/* FIXED: Submit button instead of Link */}
-                    <button type="submit" className="login-button">
-                        Login
-                    </button>
-                </form>
-
-                <div className="register-text">
-                    Don't have an account?{" "}
-                    <Link to="/CreateAccount" className="register-link">
-                        Register
-                    </Link>
+        <div className="settings-container">
+            {/* Top Bar */}
+            <header className="top-bar">
+                <div className="top-bar-left">
+                    <h2>Admin Settings – User Management</h2>
                 </div>
+                <div className="top-bar-right">
+                    <div className="profile-section">
+                        <div className="profile-pic">
+                            <img src="https://via.placeholder.com/40" alt="Profile" />
+                        </div>
+                        <span className="username">Admin User</span>
+                        <button className="logout-btn">Logout</button>
+                    </div>
+                </div>
+            </header>
 
-                {/* Show login status message */}
-                {message && <p style={{ color: "white", marginTop: "15px" }}>{message}</p>}
+            <div className="content-wrapper">
+                {/* Sidebar */}
+                <aside className="sidebar">
+                    <div className="logo-section">
+                        <img src={logo} alt="Standard Chartered" className="logo" />
+                    </div>
+                    <div className="menu-section">
+                        <ul>
+                            <li><Link to="/AdminDashboard" className="menu-link">Dashboard</Link></li>
+                            <li className="active">User Management</li>
+                            
+                            <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
+                            <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
+                            <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
+                            <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
+
+
+                        </ul>
+                    </div>
+                </aside>
+
+                {/* Main Content */}
+                <main className="main-content">
+                    <div className="card">
+                        <h2>Assign Users to Active Directory Groups</h2>
+                        <div className="form-grid">
+                            <select>
+                                <option>Select User</option>
+                                <option>John Smith</option>
+                                <option>Priya Sharma</option>
+                                <option>David Lee</option>
+                            </select>
+
+                            <select>
+                                <option>Select AD Group</option>
+                                <option>Wealth Compliance</option>
+                                <option>Wealth User Admin</option>
+                                <option>Global User Admin</option>
+                            </select>
+                        </div>
+                        <div className="form-actions">
+                            <button className="btn-primary">Assign Access</button>
+                        </div>
+                    </div>
+
+                    <div className="card">
+                        <h2>Existing User Access</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User Name</th>
+                                    <th>AD Group</th>
+                                    <th>Access Folder</th>
+                                    <th>Reports</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>John Smith</td>
+                                    <td>Wealth Compliance</td>
+                                    <td>Compliance</td>
+                                    <td>KYC Reports, AML Reports</td>
+                                </tr>
+                                <tr>
+                                    <td>Priya Sharma</td>
+                                    <td>Wealth User Admin</td>
+                                    <td>Global User</td>
+                                    <td>Active User, Inactive User</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </main>
             </div>
         </div>
     );
 }
-
-export default Adminlogin;
