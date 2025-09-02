@@ -1,123 +1,3 @@
-package com.scb.axessspringboottraining.controller;
-
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.entities.User;
-import com.scb.axessspringboottraining.exceptions.UserNotFoundException;
-import com.scb.axessspringboottraining.service.AdminLoginservice;
-import com.scb.axessspringboottraining.service.AdminProfileService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.*;
-@RestController
-@RequestMapping("/api/userlogin")
-@CrossOrigin(origins = "http://localhost:3000")
-
-public class AdminLogincontroller {
-    @Autowired
-    private  AdminLoginservice AdminLogin;
-    @Autowired
-    private AdminProfileService adminprofileservice;
-
-    @PostMapping("/adduser")
-    public AdminLogin createAdmin(@RequestBody AdminLogin user) throws UserNotFoundException{
-        return AdminLogin.CreateAdmin(user);
-    }
-    @PostMapping("/adminlogin")
-    public ResponseEntity<AdminLogin> adminlogin(@RequestBody AdminLogin loginrequest){
-        String email=loginrequest.getEmail();
-        String password=loginrequest.getPassword();
-        //adminLoginservice.primarykey(email);
-        String loginStatus = AdminLogin.adminlogin(email, password);
-        if (loginStatus.equals("login successful!")) {
-            AdminLogin admin = adminprofileservice.getAdminProfile(email);
-            return ResponseEntity.ok(admin);
-        }
-        return ResponseEntity.status(401).build();
-    }
-}
-
-
-
-
-
-
-package com.scb.axessspringboottraining.controller;
-
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.service.AdminProfileService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-@RestController
-@RequestMapping("/api/profile")
-
-public class AdminProfileController {
-    @Autowired
-    private AdminProfileService adminprofileservice;
-    @GetMapping("/adminprofile")
-    public AdminLogin getAdminProfile(String email) {
-        return adminprofileservice.getAdminProfile(email);
-    }
-
-}
-
-
-
-
-
-package com.scb.axessspringboottraining.service;
-
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-
-public interface AdminProfileService {
-    AdminLogin getAdminProfile(String email);
-}
-
-
-
-
-package com.scb.axessspringboottraining.service;
-
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.Optional;
-
-@Service
-
-public class AdminProfileServiceimp implements  AdminProfileService {
-    @Autowired
-    private Adminlogindata adminlogindata;
-
-    @Override
-    public AdminLogin getAdminProfile(String email) {
-        Optional<AdminLogin> userOpt = adminlogindata.findById(email);
-        System.out.println(userOpt);
-        if (userOpt.isPresent()) {
-            return userOpt.get();
-        }
-        throw new RuntimeException("User not found with email: " + email);
-
-    }
-}
-
-
-
-
-
-
-
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -129,10 +9,9 @@ function Adminlogin() {
         email: '',
         password: ''
     });
-    
-  const [message, setMessage] = useState("");
-  const navigate = useNavigate();
 
+    const [message, setMessage] = useState("");
+    const navigate = useNavigate();
 
     const handleInputChange = (e) => {
         setFormData({
@@ -145,23 +24,22 @@ function Adminlogin() {
         e.preventDefault();
         try {
             const res = await axios.post("http://localhost:8080/api/userlogin/adminlogin", formData);
-       
+
             console.log("Login response:", res.data);
-       
+
             if (res.data && res.data.email) {
-              // store user object in localStorage
-              localStorage.setItem("user", JSON.stringify(res.data));
-              setMessage("Login successful!");
-              navigate("/AdminDashboard"); // redirect to profile page
+                // store user object in localStorage
+                localStorage.setItem("user", JSON.stringify(res.data));
+                setMessage("Login successful!");
+                navigate("/AdminDashboard"); // redirect after success
             } else {
-              // backend sends error string
-              setMessage(res.data || "Invalid login credentials");
+                setMessage(res.data || "Invalid login credentials");
             }
-          } catch (err) {
+        } catch (err) {
             console.error(err);
             setMessage("Server error. Please try again.");
-          }
-       
+        }
+
         console.log('Form submitted:', formData);
     };
 
@@ -251,30 +129,6 @@ function Adminlogin() {
                     box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
                 }
 
-                .input-icon {
-                    position: absolute;
-                    right: 20px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    color: rgba(255, 255, 255, 0.6);
-                    font-size: 18px;
-                }
-
-                .forgot-link {
-                    color: rgba(255, 255, 255, 0.9);
-                    text-decoration: none;
-                    font-size: 14px;
-                    transition: color 0.3s ease;
-                    display: block;
-                    text-align: center;
-                    margin: 20px 0;
-                }
-
-                .forgot-link:hover {
-                    color: white;
-                    text-decoration: underline;
-                }
-
                 .login-button {
                     width: 100%;
                     padding: 15px;
@@ -289,7 +143,6 @@ function Adminlogin() {
                     margin: 20px 0;
                     text-transform: uppercase;
                     letter-spacing: 1px;
-                    text-decoration: none;
                     display: inline-block;
                     box-sizing: border-box;
                 }
@@ -299,7 +152,20 @@ function Adminlogin() {
                     transform: translateY(-2px);
                     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
                     color: #333;
+                }
+
+                .forgot-link {
+                    color: rgba(255, 255, 255, 0.9);
                     text-decoration: none;
+                    font-size: 14px;
+                    display: block;
+                    text-align: center;
+                    margin: 20px 0;
+                }
+
+                .forgot-link:hover {
+                    color: white;
+                    text-decoration: underline;
                 }
 
                 .register-text {
@@ -312,7 +178,6 @@ function Adminlogin() {
                     color: white;
                     text-decoration: underline;
                     font-weight: bold;
-                    transition: color 0.3s ease;
                 }
 
                 .register-link:hover {
@@ -323,7 +188,7 @@ function Adminlogin() {
             <div className="login-card">
                 <img src={logo} alt="Admin Logo" className="logo" />
                 <h2 className="login-title">Admin Login</h2>
-                
+
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
                         <input
@@ -335,7 +200,6 @@ function Adminlogin() {
                             className="form-input"
                             required
                         />
-                        <span className="input-icon"></span>
                     </div>
 
                     <div className="input-group">
@@ -348,21 +212,27 @@ function Adminlogin() {
                             className="form-input"
                             required
                         />
-                        <span className="input-icon"></span>
                     </div>
 
                     <Link to="/ForgotPassword" className="forgot-link">
                         Forgot password?
                     </Link>
 
-                    <Link to="/AdminDashboard" className="login-button">
+                    {/* FIXED: Submit button instead of Link */}
+                    <button type="submit" className="login-button">
                         Login
-                    </Link>
+                    </button>
                 </form>
 
                 <div className="register-text">
-                    Don't have an account? <Link to="/CreateAccount" className="register-link">Register</Link>
+                    Don't have an account?{" "}
+                    <Link to="/CreateAccount" className="register-link">
+                        Register
+                    </Link>
                 </div>
+
+                {/* Show login status message */}
+                {message && <p style={{ color: "white", marginTop: "15px" }}>{message}</p>}
             </div>
         </div>
     );
