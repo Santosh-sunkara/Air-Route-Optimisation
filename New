@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "./Admindashboardsettings.css";
 import logo from "../../Assests/sclogoshiva.png";
 import { Link } from "react-router-dom";
 
 function Admindashboardsettings() {
-  const storedUser = JSON.parse(localStorage.getItem("user")); // get logged in user
-  const userEmail = storedUser?.email || "admin1@sc.com"; // fallback for testing
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const userEmail = storedUser?.email || "admin1@sc.com";
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -18,70 +19,70 @@ function Admindashboardsettings() {
 
   const [isEditing, setIsEditing] = useState(false);
 
-  // ✅ Step 1: Fetch profile on page load
+  // ✅ Fetch profile
   useEffect(() => {
-    fetch(`http://localhost:8080/api/admin/profile/${userEmail}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log("Fetched profile:", data);
+    axios
+      .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
+      .then((res) => {
+        console.log("Fetched profile:", res.data);
         setFormData({
-          firstName: data.firstname || "",
-          lastName: data.lastname || "",
-          email: data.email || "",
+          firstName: res.data.firstname || "",
+          lastName: res.data.lastname || "",
+          email: res.data.email || "",
           currentPassword: "",
           newPassword: "",
           confirmPassword: ""
         });
       })
-      .catch(err => console.error("Error fetching profile:", err));
+      .catch((err) => {
+        console.error("Error fetching profile:", err);
+      });
   }, [userEmail]);
 
   // Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value
     }));
   };
 
-  // ✅ Step 2: Save changes (PUT request)
-  const handleSubmit = (e) => {
+  // ✅ Update profile
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
       alert("New passwords do not match!");
       return;
     }
 
-    // Prepare object to send
     const updatedProfile = {
       firstname: formData.firstName,
       lastname: formData.lastName,
       email: formData.email,
-      password: formData.newPassword || formData.currentPassword, // keep or change
-      accounttype: "Admin", // or keep from backend
+      password: formData.newPassword || formData.currentPassword || "pass123",
+      accounttype: "Admin",
       status: "Active",
       recentactivity: "Profile updated"
     };
 
-    fetch(`http://localhost:8080/api/admin/profile/${userEmail}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedProfile)
-    })
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to update profile");
-        return res.json();
-      })
-      .then(data => {
-        console.log("Updated profile:", data);
-        alert("Settings updated successfully!");
-        setIsEditing(false);
-      })
-      .catch(err => {
-        console.error("Error updating profile:", err);
-        alert("Error updating settings");
-      });
+    console.log("Sending update request:", updatedProfile);
+
+    try {
+      const res = await axios.put(
+        `http://localhost:8080/api/admin/profile/${userEmail}`,
+        updatedProfile,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      console.log("Updated profile:", res.data);
+      alert("Settings updated successfully!");
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Error updating profile:", err.response || err);
+      alert("Error updating settings");
+    }
   };
 
   const handleCancel = () => {
@@ -130,10 +131,10 @@ function Admindashboardsettings() {
             <div className="card-header">
               <h2>Profile Settings</h2>
               <button
-                className={`edit-btn ${isEditing ? 'cancel-btn' : ''}`}
+                className={`edit-btn ${isEditing ? "cancel-btn" : ""}`}
                 onClick={isEditing ? handleCancel : () => setIsEditing(true)}
               >
-                {isEditing ? 'Cancel' : 'Edit Profile'}
+                {isEditing ? "Cancel" : "Edit Profile"}
               </button>
             </div>
 
