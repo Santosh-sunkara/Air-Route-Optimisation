@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import "./Adminaccount.css";
 import { Link } from "react-router-dom";
-import logo from "../../Assests/sclogoshiva.png"; // optional for sidebar/logo
+import logo from "../../Assests/sclogoshiva.png";
 
 function AdminSettings() {
   const [adminDetails, setAdminDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get logged-in admin from localStorage
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (!storedUser || !storedUser.email) {
       console.error("No logged-in user found");
+      setLoading(false);
       return;
     }
 
@@ -19,11 +20,18 @@ function AdminSettings() {
         if (!res.ok) throw new Error("Failed to fetch profile");
         return res.json();
       })
-      .then((data) => setAdminDetails(data))
-      .catch((err) => console.error("Error:", err));
+      .then((data) => {
+        setAdminDetails(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching admin details:", err);
+        setLoading(false);
+      });
   }, []);
 
-  if (!adminDetails) return <p>Loading profile...</p>;
+  if (loading) return <p>Loading admin details...</p>;
+  if (!adminDetails) return <p>No admin details found.</p>;
 
   return (
     <div className="account-container">
