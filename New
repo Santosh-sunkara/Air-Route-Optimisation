@@ -15,161 +15,135 @@ public class AdminProfileController {
     @Autowired
     private Adminlogindata adminRepository;
 
-    // ✅ Get profile by email
+    // ✅ Fetch admin profile by email
     @GetMapping("/{email}")
     public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
-        Optional<AdminLogin> profile = adminRepository.findById(email);
-        return profile.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Optional<AdminLogin> admin = adminRepository.findById(email);
+        return admin.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
-    // ✅ Update profile by email
+    // ✅ Update admin profile
     @PutMapping("/{email}")
     public ResponseEntity<AdminLogin> updateProfile(
             @PathVariable String email,
             @RequestBody AdminLogin updatedProfile) {
 
-        return adminRepository.findById(email).map(existingProfile -> {
-            // only editable fields
-            existingProfile.setFirstname(updatedProfile.getFirstname());
-            existingProfile.setLastname(updatedProfile.getLastname());
-            existingProfile.setPassword(updatedProfile.getPassword());
-
-            AdminLogin saved = adminRepository.save(existingProfile);
-            return ResponseEntity.ok(saved);
-        }).orElse(ResponseEntity.notFound().build());
+        return adminRepository.findById(email)
+                .map(existingProfile -> {
+                    existingProfile.setFirstname(updatedProfile.getFirstname());
+                    existingProfile.setLastname(updatedProfile.getLastname());
+                    existingProfile.setPassword(updatedProfile.getPassword());
+                    existingProfile.setAccounttype(updatedProfile.getAccounttype()); // optional
+                    return ResponseEntity.ok(adminRepository.save(existingProfile));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }
 
 
 
-
 import React, { useEffect, useState } from "react";
-import "./AdminSettingsUI.css";
-import logo from "../../Assests/sclogoshiva.png";
-import { Link } from "react-router-dom";
 
 export default function AdminSettings() {
-    const [profile, setProfile] = useState({
-        email: "",
-        firstname: "",
-        lastname: "",
-        password: ""
-    });
+  const [formData, setFormData] = useState({
+    firstname: "",
+    lastname: "",
+    email: "admin1@sc.com", // hardcoded for now, can be replaced with logged-in user
+    password: "",
+    accounttype: "Admin"
+  });
 
-    const [newPassword, setNewPassword] = useState("");
+  // ✅ Load current profile when component mounts
+  useEffect(() => {
+    fetch(`http://localhost:8080/api/admin/profile/${formData.email}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        return res.json();
+      })
+      .then((data) => {
+        setFormData({
+          firstname: data.firstname,
+          lastname: data.lastname,
+          email: data.email,
+          password: data.password,
+          accounttype: data.accounttype,
+        });
+      })
+      .catch((err) => console.error("Error:", err));
+  }, []);
 
-    // Fetch profile on page load
-    useEffect(() => {
-        fetch("http://localhost:8080/api/admin/profile/admin1@sc.com") // 👈 replace with logged-in email dynamically
-            .then((res) => res.json())
-            .then((data) => setProfile(data))
-            .catch((err) => console.error("Error fetching profile:", err));
-    }, []);
+  // ✅ Handle input changes
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-    // Handle save
-    const handleSubmit = (e) => {
-        e.preventDefault();
+  // ✅ Handle save
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/admin/profile/${formData.email}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
 
-        const updated = {
-            ...profile,
-            password: newPassword || profile.password // keep old if new not entered
-        };
+      if (response.ok) {
+        alert("Settings updated successfully!");
+      } else {
+        alert("Error updating settings");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Server error");
+    }
+  };
 
-        fetch(`http://localhost:8080/api/admin/profile/${profile.email}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updated)
-        })
-            .then((res) => res.json())
-            .then((data) => {
-                alert("Profile updated successfully!");
-                setProfile(data);
-                setNewPassword("");
-            })
-            .catch((err) => console.error("Error updating profile:", err));
-    };
+  return (
+    <div className="settings-container">
+      <h2>Admin Settings</h2>
+      <form onSubmit={handleSubmit} className="settings-form">
+        <label>First Name</label>
+        <input
+          type="text"
+          name="firstname"
+          value={formData.firstname}
+          onChange={handleChange}
+        />
 
-    return (
-        <div className="settings-container">
-            {/* Top Bar */}
-            <header className="top-bar">
-                <div className="top-bar-left">
-                    <h2>Admin Settings – Profile</h2>
-                </div>
-                <div className="top-bar-right">
-                    <div className="profile-section">
-                        <div className="profile-pic">
-                            <img src="https://via.placeholder.com/40" alt="Profile" />
-                        </div>
-                        <span className="username">
-                            {profile.firstname} {profile.lastname}
-                        </span>
-                        <button className="logout-btn">Logout</button>
-                    </div>
-                </div>
-            </header>
+        <label>Last Name</label>
+        <input
+          type="text"
+          name="lastname"
+          value={formData.lastname}
+          onChange={handleChange}
+        />
 
-            <div className="content-wrapper">
-                {/* Sidebar */}
-                <aside className="sidebar">
-                    <div className="logo-section">
-                        <img src={logo} alt="Standard Chartered" className="logo" />
-                    </div>
-                    <div className="menu-section">
-                        <ul>
-                            <li><Link to="/AdminDashboard" className="menu-link">Dashboard</Link></li>
-                            <li><Link to="/AdminUserManagement" className="menu-link">User Management</Link></li>
-                            <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
-                            <li className="active"><Link to="/AdminSettings" className="menu-link">Settings</Link></li>
-                            <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
-                            <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
-                        </ul>
-                    </div>
-                </aside>
+        <label>Email</label>
+        <input type="text" name="email" value={formData.email} disabled />
 
-                {/* Main Content */}
-                <main className="main-content">
-                    <div className="card">
-                        <h2>Profile Settings</h2>
-                        <form onSubmit={handleSubmit}>
-                            <div>
-                                <label>Email (read-only):</label>
-                                <input type="text" value={profile.email} readOnly />
-                            </div>
-                            <div>
-                                <label>First Name:</label>
-                                <input
-                                    type="text"
-                                    value={profile.firstname}
-                                    onChange={(e) =>
-                                        setProfile({ ...profile, firstname: e.target.value })
-                                    }
-                                />
-                            </div>
-                            <div>
-                                <label>Last Name:</label>
-                                <input
-                                    type="text"
-                                    value={profile.lastname}
-                                    onChange={(e) =>
-                                        setProfile({ ...profile, lastname: e.target.value })
-                                    }
-                                />
-                            </div>
-                            <div>
-                                <label>New Password:</label>
-                                <input
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                />
-                            </div>
-                            <button type="submit" className="btn-primary">Save Changes</button>
-                        </form>
-                    </div>
-                </main>
-            </div>
-        </div>
-    );
+        <label>Password</label>
+        <input
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+        />
+
+        <label>Account Type</label>
+        <input
+          type="text"
+          name="accounttype"
+          value={formData.accounttype}
+          disabled
+        />
+
+        <button type="submit" className="save-btn">
+          Save Changes
+        </button>
+      </form>
+    </div>
+  );
 }
