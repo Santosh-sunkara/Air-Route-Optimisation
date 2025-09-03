@@ -2,22 +2,25 @@ import React, { useEffect, useState } from "react";
 
 export default function AdminSettings() {
   const storedUser = JSON.parse(localStorage.getItem("user"));
+  const email = storedUser?.email || "";
 
   const [formData, setFormData] = useState({
     firstname: "",
     lastname: "",
-    email: storedUser?.email || "", // email from login
+    email: email,
     password: "",
     accounttype: "Admin",
     status: "",
     recentactivity: ""
   });
 
-  // ✅ Fetch current profile data
-  useEffect(() => {
-    if (!formData.email) return;
+  const [loading, setLoading] = useState(true);
 
-    fetch(`http://localhost:8080/api/admin/profile/${formData.email}`)
+  // ✅ Fetch profile data only once
+  useEffect(() => {
+    if (!email) return;
+
+    fetch(`http://localhost:8080/api/admin/profile/${email}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch profile");
         return res.json();
@@ -27,26 +30,28 @@ export default function AdminSettings() {
           firstname: data.firstname,
           lastname: data.lastname,
           email: data.email,
-          password: data.password || "",
+          password: "", // don't fill password for security
           accounttype: data.accounttype,
           status: data.status,
           recentactivity: data.recentactivity
         });
+        setLoading(false);
       })
-      .catch((err) => console.error("Error:", err));
-  }, [formData.email]);
+      .catch((err) => {
+        console.error("Error:", err);
+        setLoading(false);
+      });
+  }, [email]);
 
-  // ✅ Handle form field changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Submit changes to backend
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/profile/${formData.email}`,
+        `http://localhost:8080/api/admin/profile/${email}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -64,6 +69,8 @@ export default function AdminSettings() {
       alert("Server error");
     }
   };
+
+  if (loading) return <p>Loading profile...</p>;
 
   return (
     <div className="settings-container">
@@ -97,13 +104,7 @@ export default function AdminSettings() {
         />
 
         <label>Status</label>
-        <input
-          type="text"
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-          disabled
-        />
+        <input type="text" name="status" value={formData.status} disabled />
 
         <label>Recent Activity</label>
         <input
