@@ -1,1 +1,163 @@
-http://localhost:8080/api/admin/profile/admin1@sc.com
+import React, { useEffect, useState } from "react";
+import "./Adminaccount.css";
+import { Link } from "react-router-dom";
+import logo from "../../Assests/sclogoshiva.png"; // optional for sidebar/logo
+
+function AdminSettings() {
+  const [adminDetails, setAdminDetails] = useState(null);
+
+  useEffect(() => {
+    // Get logged-in admin from localStorage
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (!storedUser || !storedUser.email) {
+      console.error("No logged-in user found");
+      return;
+    }
+
+    fetch(`http://localhost:8080/api/admin/profile/${storedUser.email}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        return res.json();
+      })
+      .then((data) => setAdminDetails(data))
+      .catch((err) => console.error("Error:", err));
+  }, []);
+
+  if (!adminDetails) return <p>Loading profile...</p>;
+
+  return (
+    <div className="account-container">
+      {/* Top Bar */}
+      <header className="top-bar">
+        <div className="top-bar-left">
+          <h2>Admin Settings</h2>
+        </div>
+        <div className="top-bar-right">
+          <div className="profile-section">
+            <div className="profile-pic">
+              <img src="https://via.placeholder.com/40" alt="Profile" />
+            </div>
+            <span className="username">
+              {adminDetails.firstname} {adminDetails.lastname}
+            </span>
+            <button
+              className="logout-btn"
+              onClick={() => {
+                localStorage.removeItem("user");
+                window.location.href = "/";
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="content-wrapper">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="logo-section">
+            <img src={logo} alt="Standard Chartered" className="logo" />
+          </div>
+          <div className="menu-section">
+            <ul>
+              <li>
+                <Link to="/AdminDashboard" className="menu-link">
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link to="/AdminUser" className="menu-link">
+                  User Management
+                </Link>
+              </li>
+              <li>
+                <Link to="/ReportAccess" className="menu-link">
+                  Report Access
+                </Link>
+              </li>
+              <li className="active">Settings</li>
+              <li>
+                <Link to="/Account" className="menu-link">
+                  Account
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="main-content">
+          <div className="account-overview">
+            <div className="profile-header">
+              <div className="profile-avatar">
+                <img
+                  src="https://via.placeholder.com/120"
+                  alt="Admin Profile"
+                />
+              </div>
+              <div className="profile-info">
+                <h1>
+                  {adminDetails.firstname} {adminDetails.lastname}
+                </h1>
+                <p className="role">{adminDetails.accounttype}</p>
+                <span className="status-badge active">
+                  {adminDetails.status || "Active"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="account-details">
+            <div className="details-grid">
+              <div className="details-card">
+                <h3>Personal Information</h3>
+                <div className="detail-item">
+                  <label>First Name:</label>
+                  <span>{adminDetails.firstname}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Last Name:</label>
+                  <span>{adminDetails.lastname}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Email:</label>
+                  <span>{adminDetails.email}</span>
+                </div>
+              </div>
+
+              <div className="details-card">
+                <h3>Account Details</h3>
+                <div className="detail-item">
+                  <label>Account Type:</label>
+                  <span>{adminDetails.accounttype}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Status:</label>
+                  <span>{adminDetails.status || "Active"}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Recent Activity:</label>
+                  <span>
+                    {adminDetails.recentactivity || "No recent activity"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="details-card">
+                <h3>Quick Actions</h3>
+                <div className="action-buttons">
+                  <Link to="/Account" className="action-btn">
+                    Back to Account
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default AdminSettings;
