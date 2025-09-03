@@ -8,9 +8,12 @@ export default function AdminSettings() {
     lastname: "",
     email: storedUser?.email || "", // email from login
     password: "",
-    accounttype: "Admin"
+    accounttype: "Admin",
+    status: "",
+    recentactivity: ""
   });
 
+  // ✅ Fetch current profile data
   useEffect(() => {
     if (!formData.email) return;
 
@@ -24,17 +27,21 @@ export default function AdminSettings() {
           firstname: data.firstname,
           lastname: data.lastname,
           email: data.email,
-          password: data.password,
+          password: data.password || "",
           accounttype: data.accounttype,
+          status: data.status,
+          recentactivity: data.recentactivity
         });
       })
       .catch((err) => console.error("Error:", err));
   }, [formData.email]);
 
+  // ✅ Handle form field changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // ✅ Submit changes to backend
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -89,7 +96,22 @@ export default function AdminSettings() {
           onChange={handleChange}
         />
 
-       
+        <label>Status</label>
+        <input
+          type="text"
+          name="status"
+          value={formData.status}
+          onChange={handleChange}
+          disabled
+        />
+
+        <label>Recent Activity</label>
+        <input
+          type="text"
+          name="recentactivity"
+          value={formData.recentactivity || "No recent activity"}
+          disabled
+        />
 
         <button type="submit" className="save-btn">
           Save Changes
