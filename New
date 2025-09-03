@@ -1,101 +1,154 @@
-import React from "react";
+@RestController
+@RequestMapping("/api/admin")
+public class AdminController {
+
+    @Autowired
+    private AdminRepository adminRepository;
+
+    // Get profile by email
+    @GetMapping("/profile/{email}")
+    public ResponseEntity<AdminLoginData> getProfile(@PathVariable String email) {
+        return adminRepository.findById(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Update profile
+    @PutMapping("/profile/{email}")
+    public ResponseEntity<AdminLoginData> updateProfile(
+            @PathVariable String email,
+            @RequestBody AdminLoginData updatedAdmin) {
+
+        return adminRepository.findById(email).map(admin -> {
+            admin.setFirstname(updatedAdmin.getFirstname());
+            admin.setLastname(updatedAdmin.getLastname());
+            if (updatedAdmin.getPassword() != null && !updatedAdmin.getPassword().isEmpty()) {
+                admin.setPassword(updatedAdmin.getPassword());
+            }
+            return ResponseEntity.ok(adminRepository.save(admin));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+}
+
+
+
+
+
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import "./AdminSettingsUI.css";
 import logo from "../../Assests/sclogoshiva.png";
 import { Link } from "react-router-dom";
 
 export default function AdminSettingsUI() {
+    const [profile, setProfile] = useState({
+        firstname: "",
+        lastname: "",
+        email: "",
+        password: "",
+        newPassword: "",
+        confirmPassword: ""
+    });
+
+    const [message, setMessage] = useState("");
+
+    useEffect(() => {
+        // get email from localStorage after login
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (user?.email) {
+            axios.get(`http://localhost:8080/api/admin/profile/${user.email}`)
+                .then(res => setProfile({ ...profile, ...res.data }))
+                .catch(err => console.error("Error fetching profile:", err));
+        }
+    }, []);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setProfile({ ...profile, [name]: value });
+    };
+
+    const handleSave = async () => {
+        if (profile.newPassword !== profile.confirmPassword) {
+            setMessage("New passwords do not match");
+            return;
+        }
+
+        try {
+            const res = await axios.put(
+                `http://localhost:8080/api/admin/profile/${profile.email}`,
+                {
+                    firstname: profile.firstname,
+                    lastname: profile.lastname,
+                    password: profile.newPassword || profile.password
+                }
+            );
+
+            setMessage("Profile updated successfully!");
+            setProfile({ ...profile, ...res.data, newPassword: "", confirmPassword: "" });
+        } catch (err) {
+            console.error("Update error:", err);
+            setMessage("Failed to update profile");
+        }
+    };
+
     return (
         <div className="settings-container">
-            {/* Top Bar */}
-            <header className="top-bar">
-                <div className="top-bar-left">
-                    <h2>Admin Settings – User Management</h2>
+            {/* Sidebar & Header omitted for brevity */}
+
+            <main className="main-content">
+                <div className="card">
+                    <h2>Profile Settings</h2>
+                    <div className="form-grid">
+                        <input
+                            type="text"
+                            name="firstname"
+                            value={profile.firstname}
+                            onChange={handleChange}
+                            placeholder="First Name"
+                        />
+                        <input
+                            type="text"
+                            name="lastname"
+                            value={profile.lastname}
+                            onChange={handleChange}
+                            placeholder="Last Name"
+                        />
+                        <input
+                            type="email"
+                            name="email"
+                            value={profile.email}
+                            readOnly
+                            className="readonly-input"
+                        />
+                    </div>
+
+                    <h3>Change Password</h3>
+                    <div className="form-grid">
+                        <input
+                            type="password"
+                            name="newPassword"
+                            value={profile.newPassword}
+                            onChange={handleChange}
+                            placeholder="New Password"
+                        />
+                        <input
+                            type="password"
+                            name="confirmPassword"
+                            value={profile.confirmPassword}
+                            onChange={handleChange}
+                            placeholder="Confirm New Password"
+                        />
+                    </div>
+
+                    <div className="form-actions">
+                        <button className="btn-primary" onClick={handleSave}>
+                            Save Changes
+                        </button>
+                    </div>
+
+                    {message && <p className="status-msg">{message}</p>}
                 </div>
-                <div className="top-bar-right">
-                    <div className="profile-section">
-                        <div className="profile-pic">
-                            <img src="https://via.placeholder.com/40" alt="Profile" />
-                        </div>
-                        <span className="username">Admin User</span>
-                        <button className="logout-btn">Logout</button>
-                    </div>
-                </div>
-            </header>
-
-            <div className="content-wrapper">
-                {/* Sidebar */}
-                <aside className="sidebar">
-                    <div className="logo-section">
-                        <img src={logo} alt="Standard Chartered" className="logo" />
-                    </div>
-                    <div className="menu-section">
-                        <ul>
-                            <li><Link to="/AdminDashboard" className="menu-link">Dashboard</Link></li>
-                            <li className="active">User Management</li>
-                            
-                            <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
-                            <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
-                            <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
-                            <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
-
-
-                        </ul>
-                    </div>
-                </aside>
-
-                {/* Main Content */}
-                <main className="main-content">
-                    <div className="card">
-                        <h2>Assign Users to Active Directory Groups</h2>
-                        <div className="form-grid">
-                            <select>
-                                <option>Select User</option>
-                                <option>John Smith</option>
-                                <option>Priya Sharma</option>
-                                <option>David Lee</option>
-                            </select>
-
-                            <select>
-                                <option>Select AD Group</option>
-                                <option>Wealth Compliance</option>
-                                <option>Wealth User Admin</option>
-                                <option>Global User Admin</option>
-                            </select>
-                        </div>
-                        <div className="form-actions">
-                            <button className="btn-primary">Assign Access</button>
-                        </div>
-                    </div>
-
-                    <div className="card">
-                        <h2>Existing User Access</h2>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>User Name</th>
-                                    <th>AD Group</th>
-                                    <th>Access Folder</th>
-                                    <th>Reports</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>John Smith</td>
-                                    <td>Wealth Compliance</td>
-                                    <td>Compliance</td>
-                                    <td>KYC Reports, AML Reports</td>
-                                </tr>
-                                <tr>
-                                    <td>Priya Sharma</td>
-                                    <td>Wealth User Admin</td>
-                                    <td>Global User</td>
-                                    <td>Active User, Inactive User</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </main>
-            </div>
+            </main>
         </div>
     );
 }
