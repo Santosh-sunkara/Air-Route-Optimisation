@@ -1,5 +1,16 @@
 package com.scb.axessspringboottraining.service;
 
+import com.scb.axessspringboottraining.entities.AdminLogin;
+
+public interface AdminProfileService {
+    AdminLogin getAdminProfile(String email);
+    AdminLogin updateAdminProfile(String email, AdminLogin updatedProfile);
+}
+
+
+
+package com.scb.axessspringboottraining.service;
+
 import com.scb.axessspringboottraining.dao.Adminlogindata;
 import com.scb.axessspringboottraining.entities.AdminLogin;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,5 +31,59 @@ public class AdminProfileServiceimp implements AdminProfileService {
             return userOpt.get();
         }
         throw new RuntimeException("User not found with email: " + email);
+    }
+
+    @Override
+    public AdminLogin updateAdminProfile(String email, AdminLogin updatedProfile) {
+        return adminlogindata.findById(email)
+                .map(existingProfile -> {
+                    existingProfile.setFirstname(updatedProfile.getFirstname());
+                    existingProfile.setLastname(updatedProfile.getLastname());
+                    existingProfile.setPassword(updatedProfile.getPassword());
+                    existingProfile.setAccounttype(updatedProfile.getAccounttype());
+                    existingProfile.setStatus(updatedProfile.getStatus());
+                    existingProfile.setRecentactivity(updatedProfile.getRecentactivity());
+                    return adminlogindata.save(existingProfile); // Save to DB
+                })
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    }
+}
+
+
+
+
+package com.scb.axessspringboottraining.controller;
+
+import com.scb.axessspringboottraining.entities.AdminLogin;
+import com.scb.axessspringboottraining.service.AdminProfileService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/admin/profile")
+@CrossOrigin(origins = "http://localhost:3000") // React frontend
+public class AdminProfileController {
+
+    @Autowired
+    private AdminProfileService adminProfileService;
+
+    // ✅ Get admin profile by email
+    @GetMapping("/{email}")
+    public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
+        System.out.println("Fetching profile for email: " + email);
+        return ResponseEntity.ok(adminProfileService.getAdminProfile(email));
+    }
+
+    // ✅ Update admin profile
+    @PutMapping("/{email}")
+    public ResponseEntity<AdminLogin> updateProfile(
+            @PathVariable String email,
+            @RequestBody AdminLogin updatedProfile) {
+
+        System.out.println("Updating profile for email: " + email);
+        System.out.println("New details: " + updatedProfile);
+
+        return ResponseEntity.ok(adminProfileService.updateAdminProfile(email, updatedProfile));
     }
 }
