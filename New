@@ -1,11 +1,1 @@
-localStorage.setItem(
-  "user",
-  JSON.stringify({
-    firstname: "Shiva",
-    lastname: "Santosh",
-    email: "admin1@sc.com", // correct email
-    accounttype: "Admin",
-    recentactivity: null,
-    status: "Active"
-  })
-);
+http://localhost:8080/api/admin/profile/admin1@sc.com
