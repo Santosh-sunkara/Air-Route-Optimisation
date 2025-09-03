@@ -1,43 +1,242 @@
-@PutMapping("/{email}")
-    public ResponseEntity<AdminLogin> updateProfile(
-            @PathVariable String email,
-            @RequestBody AdminLogin updatedProfile) {
+import React, { useState, useEffect } from "react";
+import "./Admindashboardsettings.css";
+import logo from "../../Assests/sclogoshiva.png";
+import { Link } from "react-router-dom";
 
-        return adminRepository.findById(email)
-                .map(existingProfile -> {
-                    existingProfile.setFirstname(updatedProfile.getFirstname());
-                    existingProfile.setLastname(updatedProfile.getLastname());
-                    existingProfile.setPassword(updatedProfile.getPassword());
-                    existingProfile.setAccounttype(updatedProfile.getAccounttype()); // optional
-                    existingProfile.setStatus(updatedProfile.getStatus());
-                    existingProfile.setRecentactivity(updatedProfile.getRecentactivity());
-                    return ResponseEntity.ok(adminRepository.save(existingProfile));
-                })
-                .orElse(ResponseEntity.notFound().build());
+function Admindashboardsettings() {
+  const storedUser = JSON.parse(localStorage.getItem("user")); // get logged in user
+  const userEmail = storedUser?.email || "admin1@sc.com"; // fallback for testing
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+
+  // ✅ Step 1: Fetch profile on page load
+  useEffect(() => {
+    fetch(`http://localhost:8080/api/admin/profile/${userEmail}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("Fetched profile:", data);
+        setFormData({
+          firstName: data.firstname || "",
+          lastName: data.lastname || "",
+          email: data.email || "",
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: ""
+        });
+      })
+      .catch(err => console.error("Error fetching profile:", err));
+  }, [userEmail]);
+
+  // Handle input change
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // ✅ Step 2: Save changes (PUT request)
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
+      alert("New passwords do not match!");
+      return;
     }
+
+    // Prepare object to send
+    const updatedProfile = {
+      firstname: formData.firstName,
+      lastname: formData.lastName,
+      email: formData.email,
+      password: formData.newPassword || formData.currentPassword, // keep or change
+      accounttype: "Admin", // or keep from backend
+      status: "Active",
+      recentactivity: "Profile updated"
+    };
+
+    fetch(`http://localhost:8080/api/admin/profile/${userEmail}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedProfile)
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to update profile");
+        return res.json();
+      })
+      .then(data => {
+        console.log("Updated profile:", data);
+        alert("Settings updated successfully!");
+        setIsEditing(false);
+      })
+      .catch(err => {
+        console.error("Error updating profile:", err);
+        alert("Error updating settings");
+      });
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+  };
+
+  return (
+    <div className="settings-container">
+      {/* Top Bar */}
+      <header className="top-bar">
+        <div className="top-bar-left">
+          <h2>Settings</h2>
+        </div>
+        <div className="top-bar-right">
+          <div className="profile-section">
+            <div className="profile-pic">
+              <img src="https://via.placeholder.com/40" alt="Profile" />
+            </div>
+            <span className="username">{formData.firstName} {formData.lastName}</span>
+            <button className="logout-btn">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <div className="content-wrapper">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="logo-section">
+            <img src={logo} alt="Standard Chartered" className="logo" />
+          </div>
+          <div className="menu-section">
+            <ul>
+              <li><Link to="/AdminDashboard" className="menu-link">Dashboard</Link></li>
+              <li><Link to="/AdminUser" className="menu-link">User Management</Link></li>
+              <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
+              <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
+              <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
+              <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
+            </ul>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="main-content">
+          <div className="settings-card">
+            <div className="card-header">
+              <h2>Profile Settings</h2>
+              <button
+                className={`edit-btn ${isEditing ? 'cancel-btn' : ''}`}
+                onClick={isEditing ? handleCancel : () => setIsEditing(true)}
+              >
+                {isEditing ? 'Cancel' : 'Edit Profile'}
+              </button>
+            </div>
+
+            <form className="settings-form" onSubmit={handleSubmit}>
+              <div className="form-section">
+                <h3>Personal Information</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="firstName">First Name</label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="lastName">Last Name</label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="form-control"
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="email">Email Address</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    disabled
+                    className="form-control"
+                  />
+                </div>
+              </div>
+
+              {isEditing && (
+                <div className="form-section">
+                  <h3>Change Password</h3>
+                  <div className="form-group">
+                    <label htmlFor="currentPassword">Current Password</label>
+                    <input
+                      type="password"
+                      id="currentPassword"
+                      name="currentPassword"
+                      value={formData.currentPassword}
+                      onChange={handleInputChange}
+                      className="form-control"
+                      placeholder="Enter current password"
+                    />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="newPassword">New Password</label>
+                      <input
+                        type="password"
+                        id="newPassword"
+                        name="newPassword"
+                        value={formData.newPassword}
+                        onChange={handleInputChange}
+                        className="form-control"
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="confirmPassword">Confirm New Password</label>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className="form-control"
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {isEditing && (
+                <div className="form-actions">
+                  <button type="submit" className="save-btn">
+                    Save Changes
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 }
 
-
-
-{firstname: 'Shiva', lastname: 'Santosh', email: 'admin1@sc.com', accounttype: 'Admin', password: 'pass123', …}
-accounttype
-: 
-"Admin"
-email
-: 
-"admin1@sc.com"
-firstname
-: 
-"Shiva"
-lastname
-: 
-"Santosh"
-password
-: 
-"pass123"
-recentactivity
-: 
-null
-status
-: 
-"Active"
+export default Admindashboardsettings;
