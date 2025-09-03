@@ -1,250 +1,100 @@
-package com.scb.axessspringboottraining.controller;
-
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
-
-@CrossOrigin(origins = "http://localhost:3000") // Allow React frontend
-@RestController
-@RequestMapping("/api/admin/profile")
-public class AdminProfileController {
-
-    @Autowired
-    private Adminlogindata adminRepository;
-
-    // ✅ Fetch admin profile by email
-    @GetMapping("/{email}")
-    public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
-        Optional<AdminLogin> admin = adminRepository.findById(email);
-        return admin.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // ✅ Update admin profile
-    @PutMapping("/{email}")
-    public ResponseEntity<AdminLogin> updateProfile(
-            @PathVariable String email,
-            @RequestBody AdminLogin updatedProfile) {
-
-        return adminRepository.findById(email)
-                .map(existingProfile -> {
-                    existingProfile.setFirstname(updatedProfile.getFirstname());
-                    existingProfile.setLastname(updatedProfile.getLastname());
-                    existingProfile.setPassword(updatedProfile.getPassword());
-                    existingProfile.setAccounttype(updatedProfile.getAccounttype()); // optional
-                    existingProfile.setStatus(updatedProfile.getStatus());
-                    existingProfile.setRecentactivity(updatedProfile.getRecentactivity());
-                    return ResponseEntity.ok(adminRepository.save(existingProfile));
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-}
-
-
-
-package com.scb.axessspringboottraining.service;
-
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.Optional;
-
-@Service
-public class AdminProfileServiceimp implements AdminProfileService {
-
-    @Autowired
-    private Adminlogindata adminlogindata;
-
-    @Override
-    public AdminLogin getAdminProfile(String email) {
-        Optional<AdminLogin> userOpt = adminlogindata.findById(email);
-        if (userOpt.isPresent()) {
-            return userOpt.get();
-        }
-        throw new RuntimeException("User not found with email: " + email);
-    }
-}
-
-
-
 import React, { useEffect, useState } from "react";
-import "./Adminaccount.css";
-import logo from "../../Assests/sclogoshiva.png";
-import { Link } from "react-router-dom";
 
-function Account() {
-  const [adminDetails, setAdminDetails] = useState(null);
+export default function AdminSettings() {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+
+  const [formData, setFormData] = useState({
+    firstname: "",
+    lastname: "",
+    email: storedUser?.email || "", // email from login
+    password: "",
+    accounttype: "Admin"
+  });
 
   useEffect(() => {
-    // Get logged-in admin from localStorage
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (!storedUser || !storedUser.email) {
-      console.error("No logged in user found");
-      return;
-    }
+    if (!formData.email) return;
 
-    fetch(`http://localhost:8080/api/admin/profile/${storedUser.email}`)
+    fetch(`http://localhost:8080/api/admin/profile/${formData.email}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch profile");
         return res.json();
       })
-      .then((data) => setAdminDetails(data))
+      .then((data) => {
+        setFormData({
+          firstname: data.firstname,
+          lastname: data.lastname,
+          email: data.email,
+          password: data.password,
+          accounttype: data.accounttype,
+        });
+      })
       .catch((err) => console.error("Error:", err));
-  }, []);
+  }, [formData.email]);
 
-  if (!adminDetails) {
-    return <p>Loading account details...</p>;
-  }
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/admin/profile/${formData.email}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      if (response.ok) {
+        alert("Settings updated successfully!");
+      } else {
+        alert("Error updating settings");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Server error");
+    }
+  };
 
   return (
-    <div className="account-container">
-      {/* Top Bar */}
-      <header className="top-bar">
-        <div className="top-bar-left">
-          <h2>Account Information</h2>
-        </div>
-        <div className="top-bar-right">
-          <div className="profile-section">
-            <div className="profile-pic">
-              <img src="https://via.placeholder.com/40" alt="Profile" />
-            </div>
-            <span className="username">
-              {adminDetails.firstname} {adminDetails.lastname}
-            </span>
-            <button
-              className="logout-btn"
-              onClick={() => {
-                localStorage.removeItem("user");
-                window.location.href = "/"; // redirect to login
-              }}
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="settings-container">
+      <h2>Admin Settings</h2>
+      <form onSubmit={handleSubmit} className="settings-form">
+        <label>First Name</label>
+        <input
+          type="text"
+          name="firstname"
+          value={formData.firstname}
+          onChange={handleChange}
+        />
 
-      <div className="content-wrapper">
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <div className="logo-section">
-            <img src={logo} alt="Standard Chartered" className="logo" />
-          </div>
-          <div className="menu-section">
-            <ul>
-              <li>
-                <Link to="/AdminDashboard" className="menu-link">
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link to="/AdminUser" className="menu-link">
-                  User Management
-                </Link>
-              </li>
-              <li>
-                <Link to="/ReportAccess" className="menu-link">
-                  Report Access
-                </Link>
-              </li>
-              <li>
-                <Link to="/Admindashboardsettings" className="menu-link">
-                  Settings
-                </Link>
-              </li>
-              <li className="active">Account</li>
-              <li>
-                <Link to="/Adminhelp" className="menu-link">
-                  Help
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </aside>
+        <label>Last Name</label>
+        <input
+          type="text"
+          name="lastname"
+          value={formData.lastname}
+          onChange={handleChange}
+        />
 
-        {/* Main Content */}
-        <main className="main-content">
-          <div className="account-overview">
-            <div className="profile-header">
-              <div className="profile-avatar">
-                <img
-                  src="https://via.placeholder.com/120"
-                  alt="Admin Profile"
-                />
-              </div>
-              <div className="profile-info">
-                <h1>
-                  {adminDetails.firstname} {adminDetails.lastname}
-                </h1>
-                <p className="role">{adminDetails.accounttype}</p>
-                <span className="status-badge active">
-                  {adminDetails.status}
-                </span>
-              </div>
-            </div>
-          </div>
+        <label>Email</label>
+        <input type="text" name="email" value={formData.email} disabled />
 
-          <div className="account-details">
-            <div className="details-grid">
-              <div className="details-card">
-                <h3>Personal Information</h3>
-                <div className="detail-item">
-                  <label>First Name:</label>
-                  <span>{adminDetails.firstname}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Last Name:</label>
-                  <span>{adminDetails.lastname}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Email Address:</label>
-                  <span>{adminDetails.email}</span>
-                </div>
-              </div>
+        <label>Password</label>
+        <input
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+        />
 
-              <div className="details-card">
-                <h3>Account Details</h3>
-                <div className="detail-item">
-                  <label>Account Type:</label>
-                  <span>{adminDetails.accounttype}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Status:</label>
-                  <span>{adminDetails.status}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Recent Activity:</label>
-                  <span>
-                    {adminDetails.recentactivity || "No recent activity"}
-                  </span>
-                </div>
-              </div>
+       
 
-              <div className="details-card">
-                <h3>Quick Actions</h3>
-                <div className="action-buttons">
-                  <Link to="/Admindashboardsettings" className="action-btn">
-                    Edit Profile
-                  </Link>
-                  <button className="action-btn secondary">
-                    Change Password
-                  </button>
-                  <button className="action-btn secondary">
-                    Download Account Data
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
+        <button type="submit" className="save-btn">
+          Save Changes
+        </button>
+      </form>
     </div>
   );
 }
-
-export default Account;
