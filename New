@@ -1,1 +1,11 @@
-console.log(localStorage.getItem("user"));
+localStorage.setItem(
+  "user",
+  JSON.stringify({
+    firstname: "Shiva",
+    lastname: "Santosh",
+    email: "admin1@sc.com", // correct email
+    accounttype: "Admin",
+    recentactivity: null,
+    status: "Active"
+  })
+);
