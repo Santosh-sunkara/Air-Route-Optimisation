@@ -1,37 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import "./Adminaccount.css"; // reuse the same CSS
+import "./Adminaccount.css"; // reuse same CSS as Account page
 
 export default function AdminSettings() {
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const email = storedUser?.email;
 
-  const [formData, setFormData] = useState({
-    firstname: "",
-    lastname: "",
-    email: email || "",
-    accounttype: "Admin",
-    status: "",
-    recentactivity: ""
-  });
-
+  const [adminDetails, setAdminDetails] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch admin details
+  // Fetch admin profile on mount
   useEffect(() => {
     if (!email) return;
 
     fetch(`http://localhost:8080/api/admin/profile/${email}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        return res.json();
+      })
       .then((data) => {
-        setFormData({
-          firstname: data.firstname,
-          lastname: data.lastname,
-          email: data.email,
-          accounttype: data.accounttype,
-          status: data.status || "Active",
-          recentactivity: data.recentactivity || "No recent activity"
-        });
+        setAdminDetails(data);
         setLoading(false);
       })
       .catch((err) => {
@@ -40,21 +28,22 @@ export default function AdminSettings() {
       });
   }, [email]);
 
-  // Handle input changes
+  // Handle input changes for editable fields
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setAdminDetails({ ...adminDetails, [e.target.name]: e.target.value });
   };
 
-  // Submit updated details
+  // Submit updated first name / last name
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await fetch(
         `http://localhost:8080/api/admin/profile/${email}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(adminDetails),
         }
       );
 
@@ -74,39 +63,49 @@ export default function AdminSettings() {
   return (
     <div className="settings-container">
       <h2>Admin Settings</h2>
+
       <form onSubmit={handleSubmit} className="settings-form">
-        <label>First Name</label>
-        <input
-          type="text"
-          name="firstname"
-          value={formData.firstname}
-          onChange={handleChange}
-        />
+        <div className="details-card">
+          <h3>Personal Information</h3>
+          <div className="detail-item">
+            <label>First Name:</label>
+            <input
+              type="text"
+              name="firstname"
+              value={adminDetails.firstname}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="detail-item">
+            <label>Last Name:</label>
+            <input
+              type="text"
+              name="lastname"
+              value={adminDetails.lastname}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="detail-item">
+            <label>Email:</label>
+            <span>{adminDetails.email}</span>
+          </div>
+        </div>
 
-        <label>Last Name</label>
-        <input
-          type="text"
-          name="lastname"
-          value={formData.lastname}
-          onChange={handleChange}
-        />
-
-        <label>Email</label>
-        <input type="text" name="email" value={formData.email} disabled />
-
-        <label>Account Type</label>
-        <input type="text" name="accounttype" value={formData.accounttype} disabled />
-
-        <label>Status</label>
-        <input type="text" name="status" value={formData.status} disabled />
-
-        <label>Recent Activity</label>
-        <input
-          type="text"
-          name="recentactivity"
-          value={formData.recentactivity}
-          disabled
-        />
+        <div className="details-card">
+          <h3>Account Details</h3>
+          <div className="detail-item">
+            <label>Account Type:</label>
+            <span>{adminDetails.accounttype}</span>
+          </div>
+          <div className="detail-item">
+            <label>Status:</label>
+            <span>{adminDetails.status}</span>
+          </div>
+          <div className="detail-item">
+            <label>Recent Activity:</label>
+            <span>{adminDetails.recentactivity || "No recent activity"}</span>
+          </div>
+        </div>
 
         <div className="action-buttons">
           <button type="submit" className="save-btn">
