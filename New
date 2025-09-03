@@ -1,123 +1,50 @@
-import React, { useEffect, useState } from "react";
+package com.scb.axessspringboottraining.controller;
 
-export default function AdminSettings() {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  const email = storedUser?.email || "";
+import com.scb.axessspringboottraining.entities.AdminLogin;
+import com.scb.axessspringboottraining.dao.Adminlogindata;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-  const [formData, setFormData] = useState({
-    firstname: "",
-    lastname: "",
-    email: email,
-    password: "",
-    accounttype: "Admin",
-    status: "",
-    recentactivity: ""
-  });
+import java.util.Optional;
 
-  const [loading, setLoading] = useState(true);
+@CrossOrigin(origins = "http://localhost:3000") // Allow React frontend
+@RestController
+@RequestMapping("/api/admin/profile")
+public class AdminProfileController {
 
-  // ✅ Fetch profile data only once
-  useEffect(() => {
-    if (!email) return;
+    @Autowired
+    private Adminlogindata adminRepository;
 
-    fetch(`http://localhost:8080/api/admin/profile/${email}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch profile");
-        return res.json();
-      })
-      .then((data) => {
-        setFormData({
-          firstname: data.firstname,
-          lastname: data.lastname,
-          email: data.email,
-          password: "", // don't fill password for security
-          accounttype: data.accounttype,
-          status: data.status,
-          recentactivity: data.recentactivity
-        });
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error:", err);
-        setLoading(false);
-      });
-  }, [email]);
+    // ✅ Fetch admin profile by email
+    @GetMapping("/{email}")
+    public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
+        Optional<AdminLogin> adminOpt = adminRepository.findById(email);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/admin/profile/${email}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+        if (adminOpt.isPresent()) {
+            AdminLogin admin = adminOpt.get();
+            return ResponseEntity.ok(admin); // ✅ Send JSON to frontend
+        } else {
+            return ResponseEntity.notFound().build();
         }
-      );
-
-      if (response.ok) {
-        alert("Settings updated successfully!");
-      } else {
-        alert("Error updating settings");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Server error");
     }
-  };
 
-  if (loading) return <p>Loading profile...</p>;
+    // ✅ Update admin profile
+    @PutMapping("/{email}")
+    public ResponseEntity<AdminLogin> updateProfile(
+            @PathVariable String email,
+            @RequestBody AdminLogin updatedProfile) {
 
-  return (
-    <div className="settings-container">
-      <h2>Admin Settings</h2>
-      <form onSubmit={handleSubmit} className="settings-form">
-        <label>First Name</label>
-        <input
-          type="text"
-          name="firstname"
-          value={formData.firstname}
-          onChange={handleChange}
-        />
-
-        <label>Last Name</label>
-        <input
-          type="text"
-          name="lastname"
-          value={formData.lastname}
-          onChange={handleChange}
-        />
-
-        <label>Email</label>
-        <input type="text" name="email" value={formData.email} disabled />
-
-        <label>Password</label>
-        <input
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-        />
-
-        <label>Status</label>
-        <input type="text" name="status" value={formData.status} disabled />
-
-        <label>Recent Activity</label>
-        <input
-          type="text"
-          name="recentactivity"
-          value={formData.recentactivity || "No recent activity"}
-          disabled
-        />
-
-        <button type="submit" className="save-btn">
-          Save Changes
-        </button>
-      </form>
-    </div>
-  );
+        return adminRepository.findById(email)
+                .map(existingProfile -> {
+                    existingProfile.setFirstname(updatedProfile.getFirstname());
+                    existingProfile.setLastname(updatedProfile.getLastname());
+                    existingProfile.setPassword(updatedProfile.getPassword());
+                    existingProfile.setAccounttype(updatedProfile.getAccounttype());
+                    existingProfile.setStatus(updatedProfile.getStatus());
+                    existingProfile.setRecentactivity(updatedProfile.getRecentactivity());
+                    return ResponseEntity.ok(adminRepository.save(existingProfile));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }
