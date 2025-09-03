@@ -1,337 +1,31 @@
-package com.scb.axessspringboottraining.controller;
-
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.entities.User;
-import com.scb.axessspringboottraining.exceptions.UserNotFoundException;
-import com.scb.axessspringboottraining.service.AdminLoginservice;
-import com.scb.axessspringboottraining.service.AdminProfileService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.*;
-@RestController
-@RequestMapping("/api/userlogin")
-@CrossOrigin(origins = "http://localhost:3000")
-
-public class AdminLogincontroller {
-    @Autowired
-    private  AdminLoginservice AdminLogin;
-    @Autowired
-    private AdminProfileService adminprofileservice;
-
-    @PostMapping("/adduser")
-    public AdminLogin createAdmin(@RequestBody AdminLogin user) throws UserNotFoundException{
-        return AdminLogin.CreateAdmin(user);
-    }
-    @PostMapping("/adminlogin")
-    public ResponseEntity<AdminLogin> adminlogin(@RequestBody AdminLogin loginrequest){
-        String email=loginrequest.getEmail();
-        String password=loginrequest.getPassword();
-        //adminLoginservice.primarykey(email);
-        String loginStatus = AdminLogin.adminlogin(email, password);
-        if (loginStatus.equals("login successful!")) {
-            AdminLogin admin = adminprofileservice.getAdminProfile(email);
-            return ResponseEntity.ok(admin);
-        }
-        return ResponseEntity.status(401).build();
-    }
-}
-
-
-
-package com.scb.axessspringboottraining.controller;
-
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
-
-@RestController
-@RequestMapping("/api/admin/profile")
-public class AdminProfileController {
-
-    @Autowired
-    private Adminlogindata adminRepository;
-
-    // ✅ Fetch admin profile by email
-    @GetMapping("/{email}")
-    public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
-        Optional<AdminLogin> admin = adminRepository.findById(email);
-        return admin.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // ✅ Update admin profile
-    @PutMapping("/{email}")
-    public ResponseEntity<AdminLogin> updateProfile(
-            @PathVariable String email,
-            @RequestBody AdminLogin updatedProfile) {
-
-        return adminRepository.findById(email)
-                .map(existingProfile -> {
-                    existingProfile.setFirstname(updatedProfile.getFirstname());
-                    existingProfile.setLastname(updatedProfile.getLastname());
-                    existingProfile.setPassword(updatedProfile.getPassword());
-                    existingProfile.setAccounttype(updatedProfile.getAccounttype()); // optional
-                    return ResponseEntity.ok(adminRepository.save(existingProfile));
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-}
-
-
-
-package com.scb.axessspringboottraining.service;
-
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.exceptions.UserNotFoundException;
-
-public interface AdminLoginservice {
-    public AdminLogin CreateAdmin(AdminLogin user) throws UserNotFoundException;
-    String primarykey(String email);
-    String adminlogin(String email, String password);
-}
-
-
-
-package com.scb.axessspringboottraining.service;
-
-
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.exceptions.UserNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-@Service
-public class AdminLoginserviceimp implements AdminLoginservice {
-    @Autowired
-    private Adminlogindata repo;
-    @Override
-    public AdminLogin CreateAdmin(AdminLogin user) throws UserNotFoundException {
-        System.out.println(user);
-        String k=user.getAccounttype();
-        if("Admin".equals(k)){
-            return repo.save(user);
-        }
-        return user;
-    }
-
-    @Override
-    public String primarykey(String email) {
-        System.out.println(email);
-        return email;
-    }
-
-    @Override
-    public String adminlogin(String email, String password) {
-        return repo.findById(email).map(user -> {
-                    if (user.getPassword().equals(password)) {
-                        return "login successful!";
-                    } else {
-                        return "Invalid Password!";
-                    }
-                })
-                .orElse("User not found! Please register");
-    }
-}
-
-
-
-package com.scb.axessspringboottraining.service;
-
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-
-public interface AdminProfileService {
-    AdminLogin getAdminProfile(String email);
-}
-
-
-
-package com.scb.axessspringboottraining.service;
-
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.Optional;
-
-@Service
-
-public class AdminProfileServiceimp implements  AdminProfileService {
-    @Autowired
-    private Adminlogindata adminlogindata;
-
-    @Override
-    public AdminLogin getAdminProfile(String email) {
-        Optional<AdminLogin> userOpt = adminlogindata.findById(email);
-        System.out.println(userOpt);
-        if (userOpt.isPresent()) {
-            return userOpt.get();
-        }
-        throw new RuntimeException("User not found with email: " + email);
-
-    }
-}
-
-
-
-
-package com.scb.axessspringboottraining.entities;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
-
-import java.util.Arrays;
-
-@Entity
-@Table(name="admin_logindata")
-public class AdminLogin {
-
-    private String firstname;
-    private  String lastname;
-    @Id
-    @NotNull
-    @Email
-    private  String email;
-    private String accounttype;
-    private  String password;
-
-    @Column(name = "recentactivity", columnDefinition = "text[]")
-    private  String[] recentactivity;
-    private  String status="";
-
-    public AdminLogin() {
-    }
-
-    public AdminLogin(String firstname, String lastname, String email, String accounttype, String password, String[] recentactivity, String status) {
-        this.firstname = firstname;
-        this.lastname = lastname;
-        this.email = email;
-        this.accounttype = accounttype;
-        this.password = password;
-        this.recentactivity = recentactivity;
-        this.status = status;
-    }
-
-    public String getFirstname() {
-        return firstname;
-    }
-
-    public void setFirstname(String firstname) {
-        this.firstname = firstname;
-    }
-
-    public String getLastname() {
-        return lastname;
-    }
-
-    public void setLastname(String lastname) {
-        this.lastname = lastname;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getAccounttype() {
-        return accounttype;
-    }
-
-    public void setAccounttype(String accounttype) {
-        this.accounttype = accounttype;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String[] getRecentactivity() {
-        return recentactivity;
-    }
-
-    public void setRecentactivity(String[] recentactivity) {
-        this.recentactivity = recentactivity;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    @Override
-    public String toString() {
-        return "AdminLogin{" +
-                "firstname='" + firstname + '\'' +
-                ", lastname='" + lastname + '\'' +
-                ", email='" + email + '\'' +
-                ", accounttype='" + accounttype + '\'' +
-                ", password='" + password + '\'' +
-                ", recentactivity=" + Arrays.toString(recentactivity) +
-                ", status='" + status + '\'' +
-                '}';
-    }
-}
-
-
-
-package com.scb.axessspringboottraining.dao;
-
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import org.springframework.data.repository.CrudRepository;
-
-public interface Adminlogindata extends CrudRepository<AdminLogin,String> {
-    //User def function
-}
-
-
-
-
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./Adminaccount.css";
 import logo from "../../Assests/sclogoshiva.png";
 import { Link } from "react-router-dom";
 
 function Account() {
-  const adminDetails = {
-    firstName: "Admin",
-    lastName: "User",
-    email: "admin@standardchartered.com",
-    employeeId: "SC001234",
-    department: "IT Administration",
-    role: "System Administrator",
-    phoneNumber: "+65 6596 7000",
-    officeLocation: "Singapore",
-    joinDate: "January 15, 2020",
-    lastLogin: "August 22, 2025 - 10:30 AM",
-    accountStatus: "Active",
-    permissions: [
-      "User Management",
-      "Report Access Control", 
-      "AD Group Management",
-      "System Settings",
-      "Audit Logs"
-    ]
-  };
+  const [adminDetails, setAdminDetails] = useState(null);
+
+  useEffect(() => {
+    // Get logged-in admin from localStorage
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (!storedUser || !storedUser.email) {
+      console.error("No logged in user found");
+      return;
+    }
+
+    fetch(`http://localhost:8080/api/admin/profile/${storedUser.email}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        return res.json();
+      })
+      .then((data) => setAdminDetails(data))
+      .catch((err) => console.error("Error:", err));
+  }, []);
+
+  if (!adminDetails) {
+    return <p>Loading account details...</p>;
+  }
 
   return (
     <div className="account-container">
@@ -345,8 +39,18 @@ function Account() {
             <div className="profile-pic">
               <img src="https://via.placeholder.com/40" alt="Profile" />
             </div>
-            <span className="username">Admin User</span>
-            <button className="logout-btn">Logout</button>
+            <span className="username">
+              {adminDetails.firstname} {adminDetails.lastname}
+            </span>
+            <button
+              className="logout-btn"
+              onClick={() => {
+                localStorage.removeItem("user");
+                window.location.href = "/"; // redirect to login
+              }}
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>
@@ -359,13 +63,32 @@ function Account() {
           </div>
           <div className="menu-section">
             <ul>
-              <li><Link to="/AdminDashboard" className="menu-link">Dashboard</Link></li>
-              <li><Link to="/AdminUser" className="menu-link">User Management</Link></li>
-              
-              <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
-              <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
+              <li>
+                <Link to="/AdminDashboard" className="menu-link">
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link to="/AdminUser" className="menu-link">
+                  User Management
+                </Link>
+              </li>
+              <li>
+                <Link to="/ReportAccess" className="menu-link">
+                  Report Access
+                </Link>
+              </li>
+              <li>
+                <Link to="/Admindashboardsettings" className="menu-link">
+                  Settings
+                </Link>
+              </li>
               <li className="active">Account</li>
-              <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
+              <li>
+                <Link to="/Adminhelp" className="menu-link">
+                  Help
+                </Link>
+              </li>
             </ul>
           </div>
         </aside>
@@ -375,15 +98,17 @@ function Account() {
           <div className="account-overview">
             <div className="profile-header">
               <div className="profile-avatar">
-                <img src="https://via.placeholder.com/120" alt="Admin Profile" />
+                <img
+                  src="https://via.placeholder.com/120"
+                  alt="Admin Profile"
+                />
               </div>
               <div className="profile-info">
-                <h1>{adminDetails.firstName} {adminDetails.lastName}</h1>
-                <p className="role">{adminDetails.role}</p>
-                <p className="department">{adminDetails.department}</p>
-                <span className={`status-badge ${adminDetails.accountStatus.toLowerCase()}`}>
-                  {adminDetails.accountStatus}
-                </span>
+                <h1>
+                  {adminDetails.firstname} {adminDetails.lastname}
+                </h1>
+                <p className="role">{adminDetails.accounttype}</p>
+                <span className="status-badge active">Active</span>
               </div>
             </div>
           </div>
@@ -394,42 +119,23 @@ function Account() {
                 <h3>Personal Information</h3>
                 <div className="detail-item">
                   <label>First Name:</label>
-                  <span>{adminDetails.email}</span>
+                  <span>{adminDetails.firstname}</span>
                 </div>
                 <div className="detail-item">
                   <label>Last Name:</label>
-                  <span>{adminDetails.email}</span>
+                  <span>{adminDetails.lastname}</span>
                 </div>
-               
                 <div className="detail-item">
                   <label>Email Address:</label>
                   <span>{adminDetails.email}</span>
                 </div>
-               
-               
               </div>
 
               <div className="details-card">
                 <h3>Account Details</h3>
-      
-                
                 <div className="detail-item">
-                  <label>Account Status:</label>
-                  <span className={`status-text ${adminDetails.accountStatus.toLowerCase()}`}>
-                    {adminDetails.accountStatus}
-                  </span>
-                </div>
-              </div>
-
-              <div className="details-card permissions-card">
-                <h3>System Permissions</h3>
-                <div className="permissions-list">
-                  {adminDetails.permissions.map((permission, index) => (
-                    <div key={index} className="permission-item">
-                      <span className="permission-icon"></span>
-                      <span>{permission}</span>
-                    </div>
-                  ))}
+                  <label>Account Type:</label>
+                  <span>{adminDetails.accounttype}</span>
                 </div>
               </div>
 
@@ -460,19 +166,23 @@ export default Account;
 
 
 
+
 import React, { useEffect, useState } from "react";
 
 export default function AdminSettings() {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+
   const [formData, setFormData] = useState({
     firstname: "",
     lastname: "",
-    email: "admin1@sc.com", // hardcoded for now, can be replaced with logged-in user
+    email: storedUser?.email || "", // email from login
     password: "",
     accounttype: "Admin"
   });
 
-  // ✅ Load current profile when component mounts
   useEffect(() => {
+    if (!formData.email) return;
+
     fetch(`http://localhost:8080/api/admin/profile/${formData.email}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch profile");
@@ -488,14 +198,12 @@ export default function AdminSettings() {
         });
       })
       .catch((err) => console.error("Error:", err));
-  }, []);
+  }, [formData.email]);
 
-  // ✅ Handle input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Handle save
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -565,249 +273,3 @@ export default function AdminSettings() {
     </div>
   );
 }
-
-
-
-
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import logo from "../Assests/Admin.jpg";
-import bgImage from "../Assests/bg-4.jpg";
-
-function Adminlogin() {
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
-
-    const [message, setMessage] = useState("");
-    const navigate = useNavigate();
-
-    const handleInputChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await axios.post("http://localhost:8080/api/userlogin/adminlogin", formData);
-
-            console.log("Login response:", res.data);
-
-            if (res.data && res.data.email) {
-                // store user object in localStorage
-                localStorage.setItem("user", JSON.stringify(res.data));
-                setMessage("Login successful!");
-                navigate("/AdminDashboard"); // redirect after success
-            } else {
-                setMessage(res.data || "Invalid login credentials");
-            }
-        } catch (err) {
-            console.error(err);
-            setMessage("Server error. Please try again.");
-        }
-
-        console.log('Form submitted:', formData);
-    };
-
-    return (
-        <div className="login-container">
-            <style jsx>{`
-                .login-container {
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background-image: url('${bgImage}');
-                    background-size: cover;
-                    background-position: center;
-                    background-repeat: no-repeat;
-                    background-attachment: fixed;
-                    position: relative;
-                    overflow: hidden;
-                }
-
-                .login-card {
-                    background: rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(10px);
-                    border-radius: 20px;
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    padding: 40px;
-                    width: 400px;
-                    text-align: center;
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                    position: relative;
-                    z-index: 10;
-                    animation: fadeInUp 0.8s ease;
-                }
-
-                @keyframes fadeInUp {
-                    from {
-                        opacity: 0;
-                        transform: translateY(30px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-
-                .logo {
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 50%;
-                    margin: 0 auto 20px;
-                    object-fit: cover;
-                }
-
-                .login-title {
-                    color: white;
-                    font-size: 32px;
-                    font-weight: bold;
-                    margin-bottom: 40px;
-                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-                }
-
-                .input-group {
-                    position: relative;
-                    margin-bottom: 25px;
-                }
-
-                .form-input {
-                    width: 100%;
-                    padding: 15px 50px 15px 20px;
-                    background: rgba(255, 255, 255, 0.1);
-                    border: 1px solid rgba(255, 255, 255, 0.3);
-                    border-radius: 50px;
-                    color: white;
-                    font-size: 16px;
-                    outline: none;
-                    transition: all 0.3s ease;
-                    backdrop-filter: blur(5px);
-                }
-
-                .form-input::placeholder {
-                    color: rgba(255, 255, 255, 0.7);
-                }
-
-                .form-input:focus {
-                    border-color: rgba(255, 255, 255, 0.6);
-                    background: rgba(255, 255, 255, 0.15);
-                    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-                }
-
-                .login-button {
-                    width: 100%;
-                    padding: 15px;
-                    background: rgba(255, 255, 255, 0.9);
-                    color: #333;
-                    border: none;
-                    border-radius: 50px;
-                    font-size: 18px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    margin: 20px 0;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                    display: inline-block;
-                    box-sizing: border-box;
-                }
-
-                .login-button:hover {
-                    background: white;
-                    transform: translateY(-2px);
-                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-                    color: #333;
-                }
-
-                .forgot-link {
-                    color: rgba(255, 255, 255, 0.9);
-                    text-decoration: none;
-                    font-size: 14px;
-                    display: block;
-                    text-align: center;
-                    margin: 20px 0;
-                }
-
-                .forgot-link:hover {
-                    color: white;
-                    text-decoration: underline;
-                }
-
-                .register-text {
-                    color: rgba(255, 255, 255, 0.8);
-                    margin-top: 20px;
-                    font-size: 14px;
-                }
-
-                .register-link {
-                    color: white;
-                    text-decoration: underline;
-                    font-weight: bold;
-                }
-
-                .register-link:hover {
-                    color: #ffd700;
-                }
-            `}</style>
-
-            <div className="login-card">
-                <img src={logo} alt="Admin Logo" className="logo" />
-                <h2 className="login-title">Admin Login</h2>
-
-                <form onSubmit={handleSubmit}>
-                    <div className="input-group">
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            placeholder="Email"
-                            className="form-input"
-                            required
-                        />
-                    </div>
-
-                    <div className="input-group">
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            placeholder="Password"
-                            className="form-input"
-                            required
-                        />
-                    </div>
-
-                    <Link to="/ForgotPassword" className="forgot-link">
-                        Forgot password?
-                    </Link>
-
-                    {/* FIXED: Submit button instead of Link */}
-                    <button type="submit" className="login-button">
-                        Login
-                    </button>
-                </form>
-
-                <div className="register-text">
-                    Don't have an account?{" "}
-                    <Link to="/CreateAccount" className="register-link">
-                        Register
-                    </Link>
-                </div>
-
-                {/* Show login status message */}
-                {message && <p style={{ color: "white", marginTop: "15px" }}>{message}</p>}
-            </div>
-        </div>
-    );
-}
-
-export default Adminlogin;
-
