@@ -1,34 +1,48 @@
+package com.scb.axessspringboottraining.controller;
+
+import com.scb.axessspringboottraining.entities.AdminLogin;
+import com.scb.axessspringboottraining.dao.Adminlogindata;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 @RestController
-@RequestMapping("/api/admin")
-public class AdminController {
+@RequestMapping("/api/admin/profile")
+public class AdminProfileController {
 
     @Autowired
-    private AdminRepository adminRepository;
+    private Adminlogindata adminRepository;
 
-    // Get profile by email
-    @GetMapping("/profile/{email}")
-    public ResponseEntity<AdminLoginData> getProfile(@PathVariable String email) {
+    // ✅ Get admin profile by email
+    @GetMapping("/{email}")
+    public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
         return adminRepository.findById(email)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Update profile
-    @PutMapping("/profile/{email}")
-    public ResponseEntity<AdminLoginData> updateProfile(
+    // ✅ Update admin profile (except email, which stays read-only)
+    @PutMapping("/{email}")
+    public ResponseEntity<AdminLogin> updateProfile(
             @PathVariable String email,
-            @RequestBody AdminLoginData updatedAdmin) {
+            @RequestBody AdminLogin updatedAdmin) {
 
         return adminRepository.findById(email).map(admin -> {
             admin.setFirstname(updatedAdmin.getFirstname());
             admin.setLastname(updatedAdmin.getLastname());
+
             if (updatedAdmin.getPassword() != null && !updatedAdmin.getPassword().isEmpty()) {
                 admin.setPassword(updatedAdmin.getPassword());
             }
+
             return ResponseEntity.ok(adminRepository.save(admin));
         }).orElse(ResponseEntity.notFound().build());
     }
 }
+
+
+
+
 
 
 
@@ -52,9 +66,9 @@ export default function AdminSettingsUI() {
 
     const [message, setMessage] = useState("");
 
+    // ✅ Fetch profile on page load
     useEffect(() => {
-        // get email from localStorage after login
-        const user = JSON.parse(localStorage.getItem("user"));
+        const user = JSON.parse(localStorage.getItem("user")); // assuming email stored after login
         if (user?.email) {
             axios.get(`http://localhost:8080/api/admin/profile/${user.email}`)
                 .then(res => setProfile({ ...profile, ...res.data }))
@@ -67,6 +81,7 @@ export default function AdminSettingsUI() {
         setProfile({ ...profile, [name]: value });
     };
 
+    // ✅ Save profile changes
     const handleSave = async () => {
         if (profile.newPassword !== profile.confirmPassword) {
             setMessage("New passwords do not match");
@@ -93,62 +108,96 @@ export default function AdminSettingsUI() {
 
     return (
         <div className="settings-container">
-            {/* Sidebar & Header omitted for brevity */}
-
-            <main className="main-content">
-                <div className="card">
-                    <h2>Profile Settings</h2>
-                    <div className="form-grid">
-                        <input
-                            type="text"
-                            name="firstname"
-                            value={profile.firstname}
-                            onChange={handleChange}
-                            placeholder="First Name"
-                        />
-                        <input
-                            type="text"
-                            name="lastname"
-                            value={profile.lastname}
-                            onChange={handleChange}
-                            placeholder="Last Name"
-                        />
-                        <input
-                            type="email"
-                            name="email"
-                            value={profile.email}
-                            readOnly
-                            className="readonly-input"
-                        />
-                    </div>
-
-                    <h3>Change Password</h3>
-                    <div className="form-grid">
-                        <input
-                            type="password"
-                            name="newPassword"
-                            value={profile.newPassword}
-                            onChange={handleChange}
-                            placeholder="New Password"
-                        />
-                        <input
-                            type="password"
-                            name="confirmPassword"
-                            value={profile.confirmPassword}
-                            onChange={handleChange}
-                            placeholder="Confirm New Password"
-                        />
-                    </div>
-
-                    <div className="form-actions">
-                        <button className="btn-primary" onClick={handleSave}>
-                            Save Changes
-                        </button>
-                    </div>
-
-                    {message && <p className="status-msg">{message}</p>}
+            {/* Top Bar */}
+            <header className="top-bar">
+                <div className="top-bar-left">
+                    <h2>Admin Settings – Profile</h2>
                 </div>
-            </main>
+                <div className="top-bar-right">
+                    <div className="profile-section">
+                        <div className="profile-pic">
+                            <img src="https://via.placeholder.com/40" alt="Profile" />
+                        </div>
+                        <span className="username">{profile.firstname} {profile.lastname}</span>
+                        <button className="logout-btn">Logout</button>
+                    </div>
+                </div>
+            </header>
+
+            <div className="content-wrapper">
+                {/* Sidebar */}
+                <aside className="sidebar">
+                    <div className="logo-section">
+                        <img src={logo} alt="Standard Chartered" className="logo" />
+                    </div>
+                    <div className="menu-section">
+                        <ul>
+                            <li><Link to="/AdminDashboard" className="menu-link">Dashboard</Link></li>
+                            <li><Link to="/UserManagement" className="menu-link">User Management</Link></li>
+                            <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
+                            <li className="active"><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
+                            <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
+                            <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
+                        </ul>
+                    </div>
+                </aside>
+
+                {/* Main Content */}
+                <main className="main-content">
+                    <div className="card">
+                        <h2>Profile Settings</h2>
+                        <div className="form-grid">
+                            <input
+                                type="text"
+                                name="firstname"
+                                value={profile.firstname}
+                                onChange={handleChange}
+                                placeholder="First Name"
+                            />
+                            <input
+                                type="text"
+                                name="lastname"
+                                value={profile.lastname}
+                                onChange={handleChange}
+                                placeholder="Last Name"
+                            />
+                            <input
+                                type="email"
+                                name="email"
+                                value={profile.email}
+                                readOnly
+                                className="readonly-input"
+                            />
+                        </div>
+
+                        <h3>Change Password</h3>
+                        <div className="form-grid">
+                            <input
+                                type="password"
+                                name="newPassword"
+                                value={profile.newPassword}
+                                onChange={handleChange}
+                                placeholder="New Password"
+                            />
+                            <input
+                                type="password"
+                                name="confirmPassword"
+                                value={profile.confirmPassword}
+                                onChange={handleChange}
+                                placeholder="Confirm New Password"
+                            />
+                        </div>
+
+                        <div className="form-actions">
+                            <button className="btn-primary" onClick={handleSave}>
+                                Save Changes
+                            </button>
+                        </div>
+
+                        {message && <p className="status-msg">{message}</p>}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }
