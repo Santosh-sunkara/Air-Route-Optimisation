@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/admin/profile")
 public class AdminProfileController {
@@ -13,29 +15,28 @@ public class AdminProfileController {
     @Autowired
     private Adminlogindata adminRepository;
 
-    // ✅ Get admin profile by email
+    // ✅ Get profile by email
     @GetMapping("/{email}")
     public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
-        return adminRepository.findById(email)
-                .map(ResponseEntity::ok)
+        Optional<AdminLogin> profile = adminRepository.findById(email);
+        return profile.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // ✅ Update admin profile (except email, which stays read-only)
+    // ✅ Update profile by email
     @PutMapping("/{email}")
     public ResponseEntity<AdminLogin> updateProfile(
             @PathVariable String email,
-            @RequestBody AdminLogin updatedAdmin) {
+            @RequestBody AdminLogin updatedProfile) {
 
-        return adminRepository.findById(email).map(admin -> {
-            admin.setFirstname(updatedAdmin.getFirstname());
-            admin.setLastname(updatedAdmin.getLastname());
+        return adminRepository.findById(email).map(existingProfile -> {
+            // only editable fields
+            existingProfile.setFirstname(updatedProfile.getFirstname());
+            existingProfile.setLastname(updatedProfile.getLastname());
+            existingProfile.setPassword(updatedProfile.getPassword());
 
-            if (updatedAdmin.getPassword() != null && !updatedAdmin.getPassword().isEmpty()) {
-                admin.setPassword(updatedAdmin.getPassword());
-            }
-
-            return ResponseEntity.ok(adminRepository.save(admin));
+            AdminLogin saved = adminRepository.save(existingProfile);
+            return ResponseEntity.ok(saved);
         }).orElse(ResponseEntity.notFound().build());
     }
 }
@@ -43,67 +44,50 @@ public class AdminProfileController {
 
 
 
-
-
-
-
-
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import "./AdminSettingsUI.css";
 import logo from "../../Assests/sclogoshiva.png";
 import { Link } from "react-router-dom";
 
-export default function AdminSettingsUI() {
+export default function AdminSettings() {
     const [profile, setProfile] = useState({
+        email: "",
         firstname: "",
         lastname: "",
-        email: "",
-        password: "",
-        newPassword: "",
-        confirmPassword: ""
+        password: ""
     });
 
-    const [message, setMessage] = useState("");
+    const [newPassword, setNewPassword] = useState("");
 
-    // ✅ Fetch profile on page load
+    // Fetch profile on page load
     useEffect(() => {
-        const user = JSON.parse(localStorage.getItem("user")); // assuming email stored after login
-        if (user?.email) {
-            axios.get(`http://localhost:8080/api/admin/profile/${user.email}`)
-                .then(res => setProfile({ ...profile, ...res.data }))
-                .catch(err => console.error("Error fetching profile:", err));
-        }
+        fetch("http://localhost:8080/api/admin/profile/admin1@sc.com") // 👈 replace with logged-in email dynamically
+            .then((res) => res.json())
+            .then((data) => setProfile(data))
+            .catch((err) => console.error("Error fetching profile:", err));
     }, []);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setProfile({ ...profile, [name]: value });
-    };
+    // Handle save
+    const handleSubmit = (e) => {
+        e.preventDefault();
 
-    // ✅ Save profile changes
-    const handleSave = async () => {
-        if (profile.newPassword !== profile.confirmPassword) {
-            setMessage("New passwords do not match");
-            return;
-        }
+        const updated = {
+            ...profile,
+            password: newPassword || profile.password // keep old if new not entered
+        };
 
-        try {
-            const res = await axios.put(
-                `http://localhost:8080/api/admin/profile/${profile.email}`,
-                {
-                    firstname: profile.firstname,
-                    lastname: profile.lastname,
-                    password: profile.newPassword || profile.password
-                }
-            );
-
-            setMessage("Profile updated successfully!");
-            setProfile({ ...profile, ...res.data, newPassword: "", confirmPassword: "" });
-        } catch (err) {
-            console.error("Update error:", err);
-            setMessage("Failed to update profile");
-        }
+        fetch(`http://localhost:8080/api/admin/profile/${profile.email}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updated)
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                alert("Profile updated successfully!");
+                setProfile(data);
+                setNewPassword("");
+            })
+            .catch((err) => console.error("Error updating profile:", err));
     };
 
     return (
@@ -118,7 +102,9 @@ export default function AdminSettingsUI() {
                         <div className="profile-pic">
                             <img src="https://via.placeholder.com/40" alt="Profile" />
                         </div>
-                        <span className="username">{profile.firstname} {profile.lastname}</span>
+                        <span className="username">
+                            {profile.firstname} {profile.lastname}
+                        </span>
                         <button className="logout-btn">Logout</button>
                     </div>
                 </div>
@@ -133,9 +119,9 @@ export default function AdminSettingsUI() {
                     <div className="menu-section">
                         <ul>
                             <li><Link to="/AdminDashboard" className="menu-link">Dashboard</Link></li>
-                            <li><Link to="/UserManagement" className="menu-link">User Management</Link></li>
+                            <li><Link to="/AdminUserManagement" className="menu-link">User Management</Link></li>
                             <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
-                            <li className="active"><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
+                            <li className="active"><Link to="/AdminSettings" className="menu-link">Settings</Link></li>
                             <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
                             <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
                         </ul>
@@ -146,55 +132,41 @@ export default function AdminSettingsUI() {
                 <main className="main-content">
                     <div className="card">
                         <h2>Profile Settings</h2>
-                        <div className="form-grid">
-                            <input
-                                type="text"
-                                name="firstname"
-                                value={profile.firstname}
-                                onChange={handleChange}
-                                placeholder="First Name"
-                            />
-                            <input
-                                type="text"
-                                name="lastname"
-                                value={profile.lastname}
-                                onChange={handleChange}
-                                placeholder="Last Name"
-                            />
-                            <input
-                                type="email"
-                                name="email"
-                                value={profile.email}
-                                readOnly
-                                className="readonly-input"
-                            />
-                        </div>
-
-                        <h3>Change Password</h3>
-                        <div className="form-grid">
-                            <input
-                                type="password"
-                                name="newPassword"
-                                value={profile.newPassword}
-                                onChange={handleChange}
-                                placeholder="New Password"
-                            />
-                            <input
-                                type="password"
-                                name="confirmPassword"
-                                value={profile.confirmPassword}
-                                onChange={handleChange}
-                                placeholder="Confirm New Password"
-                            />
-                        </div>
-
-                        <div className="form-actions">
-                            <button className="btn-primary" onClick={handleSave}>
-                                Save Changes
-                            </button>
-                        </div>
-
-                        {message && <p className="status-msg">{message}</p>}
+                        <form onSubmit={handleSubmit}>
+                            <div>
+                                <label>Email (read-only):</label>
+                                <input type="text" value={profile.email} readOnly />
+                            </div>
+                            <div>
+                                <label>First Name:</label>
+                                <input
+                                    type="text"
+                                    value={profile.firstname}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, firstname: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <label>Last Name:</label>
+                                <input
+                                    type="text"
+                                    value={profile.lastname}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, lastname: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <label>New Password:</label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                />
+                            </div>
+                            <button type="submit" className="btn-primary">Save Changes</button>
+                        </form>
                     </div>
                 </main>
             </div>
