@@ -1,41 +1,42 @@
-package com.scb.axessspringboottraining.service;
+package com.scb.axessspringboottraining.controller;
 
 import com.scb.axessspringboottraining.entities.AdminLogin;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-
-public interface AdminProfileService {
-    AdminLogin getAdminProfile(String email);
-}
-
-
-
-package com.scb.axessspringboottraining.service;
-
 import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.entities.AdminLogin;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
-@Service
+@RestController
+@RequestMapping("/api/admin/profile")
+public class AdminProfileController {
 
-public class AdminProfileServiceimp implements  AdminProfileService {
     @Autowired
-    private Adminlogindata adminlogindata;
+    private Adminlogindata adminRepository;
 
-    @Override
-    public AdminLogin getAdminProfile(String email) {
-        Optional<AdminLogin> userOpt = adminlogindata.findById(email);
-        System.out.println(userOpt);
-        if (userOpt.isPresent()) {
-            return userOpt.get();
-        }
-        throw new RuntimeException("User not found with email: " + email);
+    // ✅ Fetch admin profile by email
+    @GetMapping("/{email}")
+    public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
+        Optional<AdminLogin> admin = adminRepository.findById(email);
+        return admin.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
 
+    // ✅ Update admin profile
+    @PutMapping("/{email}")
+    public ResponseEntity<AdminLogin> updateProfile(
+            @PathVariable String email,
+            @RequestBody AdminLogin updatedProfile) {
+
+        return adminRepository.findById(email)
+                .map(existingProfile -> {
+                    existingProfile.setFirstname(updatedProfile.getFirstname());
+                    existingProfile.setLastname(updatedProfile.getLastname());
+                    existingProfile.setPassword(updatedProfile.getPassword());
+                    existingProfile.setAccounttype(updatedProfile.getAccounttype()); // optional
+                    return ResponseEntity.ok(adminRepository.save(existingProfile));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }
-
-
-
 
