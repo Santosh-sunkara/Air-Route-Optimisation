@@ -2,3 +2,16 @@
     public Integer getEmptyDepartmentCount() {
         String sql="SELECT COUNT(u) FROM User u WHERE u.department  = ''";
         return jdbcTemplate.queryForObject(sql, Integer.class);
+
+
+
+
+
+
+    private String department="";
+    @Column(name = "bookmarks", columnDefinition = "text[]")
+    private String[] bookmarks;
+    @Column(name = "recent_files" , columnDefinition = "text[]")
+    private String[] recentFiles;
+
+    public User(){}
