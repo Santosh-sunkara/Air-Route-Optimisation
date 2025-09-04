@@ -14,12 +14,12 @@ function Admindashboardsettings() {
     email: "",
     currentPassword: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
 
   const [isEditing, setIsEditing] = useState(false);
 
-  //  Fetch profile
+  // ✅ Fetch profile
   useEffect(() => {
     axios
       .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
@@ -31,7 +31,7 @@ function Admindashboardsettings() {
           email: res.data.email || "",
           currentPassword: "",
           newPassword: "",
-          confirmPassword: ""
+          confirmPassword: "",
         });
       })
       .catch((err) => {
@@ -39,16 +39,16 @@ function Admindashboardsettings() {
       });
   }, [userEmail]);
 
-  // Handle input change
+  // ✅ Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  //  Update profile
+  // ✅ Update profile
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -75,6 +75,10 @@ function Admindashboardsettings() {
 
       console.log("Updated profile:", res.data);
       alert("Settings updated successfully!");
+
+      // ✅ Update localStorage after save
+      localStorage.setItem("user", JSON.stringify(res.data));
+
       setIsEditing(false);
     } catch (err) {
       console.error("Error updating profile:", err.response || err);
@@ -84,6 +88,12 @@ function Admindashboardsettings() {
 
   const handleCancel = () => {
     setIsEditing(false);
+  };
+
+  // ✅ Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("user"); // clear session
+    window.location.href = "/"; // redirect to login/home
   };
 
   return (
@@ -98,8 +108,12 @@ function Admindashboardsettings() {
             <div className="profile-pic">
               <img src="https://via.placeholder.com/40" alt="Profile" />
             </div>
-            <span className="username">{formData.firstName} {formData.lastName}</span>
-            <button className="logout-btn">Logout</button>
+            <span className="username">
+              {formData.firstName} {formData.lastName}
+            </span>
+            <button className="logout-btn" onClick={handleLogout}>
+              Logout
+            </button>
           </div>
         </div>
       </header>
@@ -112,12 +126,36 @@ function Admindashboardsettings() {
           </div>
           <div className="menu-section">
             <ul>
-              <li><Link to="/AdminDashboard" className="menu-link">Dashboard</Link></li>
-              <li><Link to="/AdminUser" className="menu-link">User Management</Link></li>
-              <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
-              <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
-              <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
-              <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
+              <li>
+                <Link to="/AdminDashboard" className="menu-link">
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link to="/AdminUser" className="menu-link">
+                  User Management
+                </Link>
+              </li>
+              <li>
+                <Link to="/ReportAccess" className="menu-link">
+                  Report Access
+                </Link>
+              </li>
+              <li>
+                <Link to="/Admindashboardsettings" className="menu-link">
+                  Settings
+                </Link>
+              </li>
+              <li>
+                <Link to="/Adminaccount" className="menu-link">
+                  Account
+                </Link>
+              </li>
+              <li>
+                <Link to="/Adminhelp" className="menu-link">
+                  Help
+                </Link>
+              </li>
             </ul>
           </div>
         </aside>
