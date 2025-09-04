@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+useEffect(() => {
 
-function DashboardStats() {
-  const [userCount, setUserCount] = useState(0); // state for backend data
-
-  // Fetch data when component loads
-  useEffect(() => {
     axios
-      .get("http://localhost:8080/api/users/count") // backend endpoint
+      .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
+      .then((res) => {
+        console.log("Fetched profile:", res.data);
+        setFormData({
+          firstName: res.data.firstname || "",
+          lastName: res.data.lastname || ""
+        });
+      })
+      .catch((err) => {
+        console.error("Error fetching profile:", err);
+      });
+      axios
+      .get(`http://localhost:8080/api/admin/count`) // backend endpoint
       .then((res) => {
         console.log("User count:", res.data);
         setUserCount(res.data); // store in state
@@ -15,14 +21,5 @@ function DashboardStats() {
       .catch((err) => {
         console.error("Error fetching user count:", err);
       });
-  }, []);
-
-  return (
-    <div className="stat-card">
-      <h3>Active Users</h3>
-      <p className="stat-number">{userCount}</p>
-    </div>
-  );
-}
-
-export default DashboardStats;
+  }, [userEmail]);
+  
