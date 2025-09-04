@@ -48,3 +48,37 @@ package com.scb.axessspringboottraining.service;
 public interface UserService {
     long getEmptyDepartmentCount();
 }
+
+
+
+
+
+
+
+
+@RestController
+@RequestMapping("/api/users")
+@CrossOrigin(origins = "http://localhost:3000")
+public class UserController {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    // ✅ Count users where department is NULL or empty
+    @GetMapping("/empty-department-count")
+    public ResponseEntity<?> getEmptyDepartmentCount() {
+        long count = userRepository.countUsersWithEmptyDepartment();
+        return ResponseEntity.ok(count);
+    }
+}
+
+
+
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    // JPQL query to check both NULL and empty
+    @Query("SELECT COUNT(u) FROM User u WHERE u.department IS NULL OR u.department = ''")
+    long countUsersWithEmptyDepartment();
+}
