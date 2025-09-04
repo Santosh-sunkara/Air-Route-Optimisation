@@ -1,4 +1,28 @@
-            <div className="stat-card">
-              <h3>Active Users</h3>
-              <p className="stat-number">12</p>
-            </div>
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+function DashboardStats() {
+  const [userCount, setUserCount] = useState(0); // state for backend data
+
+  // Fetch data when component loads
+  useEffect(() => {
+    axios
+      .get("http://localhost:8080/api/users/count") // backend endpoint
+      .then((res) => {
+        console.log("User count:", res.data);
+        setUserCount(res.data); // store in state
+      })
+      .catch((err) => {
+        console.error("Error fetching user count:", err);
+      });
+  }, []);
+
+  return (
+    <div className="stat-card">
+      <h3>Active Users</h3>
+      <p className="stat-number">{userCount}</p>
+    </div>
+  );
+}
+
+export default DashboardStats;
