@@ -39,3 +39,12 @@ public class UserController {
         return ResponseEntity.ok(count);
     }
 }
+
+
+
+
+package com.scb.axessspringboottraining.service;
+
+public interface UserService {
+    long getEmptyDepartmentCount();
+}
