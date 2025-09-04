@@ -1,25 +1,14 @@
-useEffect(() => {
+@RestController
+@RequestMapping("/api/admin")
+@CrossOrigin(origins = "http://localhost:3000") // allow frontend
+public class AdminController {
 
-    axios
-      .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
-      .then((res) => {
-        console.log("Fetched profile:", res.data);
-        setFormData({
-          firstName: res.data.firstname || "",
-          lastName: res.data.lastname || ""
-        });
-      })
-      .catch((err) => {
-        console.error("Error fetching profile:", err);
-      });
-      axios
-      .get(`http://localhost:8080/api/admin/count`) // backend endpoint
-      .then((res) => {
-        console.log("User count:", res.data);
-        setUserCount(res.data); // store in state
-      })
-      .catch((err) => {
-        console.error("Error fetching user count:", err);
-      });
-  }, [userEmail]);
-  
+    @Autowired
+    private Adminlogindata adminRepository;
+
+    // ✅ Count all admins
+    @GetMapping("/count")
+    public long getAdminCount() {
+        return adminRepository.count();
+    }
+}
