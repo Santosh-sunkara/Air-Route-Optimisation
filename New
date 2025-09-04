@@ -1,49 +1,41 @@
-public interface UserRepository extends JpaRepository<User, Long> {
+package com.scb.axessspringboottraining.service;
 
-    // Count users with empty department
-    long countByDepartment(String department);
-
-    // OR (if department may be NULL as well as empty)
-    @Query("SELECT COUNT(u) FROM User u WHERE u.department IS NULL OR u.department = ''")
-    long countUsersWithEmptyDepartment();
-}
-
+import com.scb.axessspringboottraining.dao.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
-public class UserService {
+public class UserServiceImpl implements UserService {
+
     @Autowired
     private UserRepository userRepository;
 
-    public long getUsersWithEmptyDepartment() {
+    @Override
+    public long getEmptyDepartmentCount() {
         return userRepository.countUsersWithEmptyDepartment();
     }
 }
 
 
+package com.scb.axessspringboottraining.controller;
+
+import com.scb.axessspringboottraining.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin("*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @GetMapping("/empty-dept-count")
-    public long getEmptyDepartmentUsers() {
-        return userService.getUsersWithEmptyDepartment();
+    // ✅ API to get number of users with empty/null department
+    @GetMapping("/empty-department-count")
+    public ResponseEntity<Long> getEmptyDepartmentCount() {
+        long count = userService.getEmptyDepartmentCount();
+        return ResponseEntity.ok(count);
     }
 }
-
-
-
-useEffect(() => {
-  axios.get("http://localhost:8080/api/users/empty-dept-count")
-    .then(res => {
-      console.log("Users with empty department:", res.data);
-      setEmptyDeptCount(res.data);
-    })
-    .catch(err => console.error(err));
-}, []);
-
-
-<p>Users with Empty Department: {emptyDeptCount}</p>
