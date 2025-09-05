@@ -55,8 +55,6 @@ public class AdminProfileController {
 
 
 
-
-
 package com.scb.axessspringboottraining.service;
 
 import com.scb.axessspringboottraining.dao.Adminlogindata;
@@ -103,8 +101,7 @@ public class AdminProfileServiceimp implements AdminProfileService {
     // ✅ Active users (count of admins)
     @Override
     public Integer getUserCount() {
-        String sql = "SELECT COUNT(*) FROM admin_login"; // <-- your table name for AdminLogin
-        return jdbcTemplate.queryForObject(sql, Integer.class);
+        return (int) adminlogindata.count();  // JPA repository count
     }
 
     // ✅ Pending requests (users with empty department)
@@ -114,4 +111,3 @@ public class AdminProfileServiceimp implements AdminProfileService {
         return jdbcTemplate.queryForObject(sql, Integer.class);
     }
 }
-
