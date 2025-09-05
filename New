@@ -8,53 +8,55 @@ import { Link } from "react-router-dom";
 function AdminDashboard() {
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const userEmail = storedUser?.email || "admin1@sc.com";
-  const [userCount, setUserCount] = useState(0); // state for backend data
-  const [depCount, setdepCount] = useState(0); 
+  const [userCount, setUserCount] = useState(0); 
+  const [depCount, setdepCount] = useState(0);
 
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
   });
-  useEffect(() => {
 
+  useEffect(() => {
+    // ✅ Fetch admin profile
     axios
       .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
       .then((res) => {
         console.log("Fetched profile:", res.data);
         setFormData({
           firstName: res.data.firstname || "",
-          lastName: res.data.lastname || ""
+          lastName: res.data.lastname || "",
         });
       })
       .catch((err) => {
         console.error("Error fetching profile:", err);
       });
-      axios
-      .get(`http://localhost:8080/api/admin/profile/count`) // backend endpoint
+
+    // ✅ Active Users count
+    axios
+      .get(`http://localhost:8080/api/users/count`)
       .then((res) => {
         console.log("User count:", res.data);
-        setUserCount(res.data); // store in state
+        setUserCount(res.data);
       })
       .catch((err) => {
         console.error("Error fetching user count:", err);
       });
-      axios
-      .get(`http://localhost:8080/api/admin/profile/departmentcount`) // backend endpoint
+
+    // ✅ Empty Department count (Pending Requests)
+    axios
+      .get(`http://localhost:8080/api/users/empty-department-count`)
       .then((res) => {
-        console.log(res)
-        console.log("User count:", res.data);
-        setdepCount(res.data); // store in state
+        console.log("Empty department count:", res.data);
+        setdepCount(res.data);
       })
       .catch((err) => {
-        console.error("Error fetching user count:", err);
+        console.error("Error fetching empty department count:", err);
       });
   }, [userEmail]);
-  
-
 
   const handleLogout = () => {
-    localStorage.removeItem("user"); // clear session
-    window.location.href = "/"; // redirect to login/home
+    localStorage.removeItem("user"); 
+    window.location.href = "/"; 
   };
 
   return (
@@ -69,7 +71,9 @@ function AdminDashboard() {
             <div className="profile-pic">
               <img src="https://via.placeholder.com/40" alt="Profile" />
             </div>
-            <span className="username">{formData.firstName} {formData.lastName}</span>
+            <span className="username">
+              {formData.firstName} {formData.lastName}
+            </span>
             <button className="logout-btn" onClick={handleLogout}>
               Logout
             </button>
@@ -86,12 +90,31 @@ function AdminDashboard() {
           <div className="menu-section">
             <ul>
               <li className="active">Dashboard</li>
-              <li><Link to="/AdminUser" className="menu-link">User Management</Link></li>
-          
-              <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
-              <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
-              <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
-              <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
+              <li>
+                <Link to="/AdminUser" className="menu-link">
+                  User Management
+                </Link>
+              </li>
+              <li>
+                <Link to="/ReportAccess" className="menu-link">
+                  Report Access
+                </Link>
+              </li>
+              <li>
+                <Link to="/Admindashboardsettings" className="menu-link">
+                  Settings
+                </Link>
+              </li>
+              <li>
+                <Link to="/Adminaccount" className="menu-link">
+                  Account
+                </Link>
+              </li>
+              <li>
+                <Link to="/Adminhelp" className="menu-link">
+                  Help
+                </Link>
+              </li>
             </ul>
           </div>
         </aside>
