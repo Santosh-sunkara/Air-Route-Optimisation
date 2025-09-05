@@ -1,227 +1,32 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import logo from "../Assests/Admin.jpg";
-import bgImage from "../Assests/bg-4.jpg";
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await axios.post("http://localhost:8080/api/users/userlogin", formData);
+    console.log("Login response:", res.data);
 
-function Adminlogin() {
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
+    // case 1: backend returns plain string
+    if (typeof res.data === "string") {
+      setMessage(res.data);
 
-    const handleInputChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
+      if (res.data.toLowerCase().includes("login successful")) {
+        // store email from formData since backend didn't send it
+        localStorage.setItem("email", formData.email);
+        setMessage("Login successful!");
+        navigate("/UserDashboard");
+      }
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log('Form submitted:', formData);
-    };
+    } else if (res.data && res.data.email) {
+      // case 2: backend returns JSON object
+      localStorage.setItem("user", JSON.stringify(res.data));  // store entire user object
+      localStorage.setItem("email", res.data.email);           // also store only email separately
+      setMessage("Login successful!");
+      navigate("/UserDashboard");
+    } else {
+      setMessage("Invalid login credentials");
+    }
 
-    return (
-        <div className="login-container">
-            <style jsx>{`
-                .login-container {
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background-image: url('${bgImage}');
-                    background-size: cover;
-                    background-position: center;
-                    background-repeat: no-repeat;
-                    background-attachment: fixed;
-                    position: relative;
-                    overflow: hidden;
-                }
-
-                .login-card {
-                    background: rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(10px);
-                    border-radius: 20px;
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    padding: 40px;
-                    width: 400px;
-                    text-align: center;
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                    position: relative;
-                    z-index: 10;
-                    animation: fadeInUp 0.8s ease;
-                }
-
-                @keyframes fadeInUp {
-                    from {
-                        opacity: 0;
-                        transform: translateY(30px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-
-                .logo {
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 50%;
-                    margin: 0 auto 20px;
-                    object-fit: cover;
-                }
-
-                .login-title {
-                    color: white;
-                    font-size: 32px;
-                    font-weight: bold;
-                    margin-bottom: 40px;
-                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-                }
-
-                .input-group {
-                    position: relative;
-                    margin-bottom: 25px;
-                }
-
-                .form-input {
-                    width: 100%;
-                    padding: 15px 50px 15px 20px;
-                    background: rgba(255, 255, 255, 0.1);
-                    border: 1px solid rgba(255, 255, 255, 0.3);
-                    border-radius: 50px;
-                    color: white;
-                    font-size: 16px;
-                    outline: none;
-                    transition: all 0.3s ease;
-                    backdrop-filter: blur(5px);
-                }
-
-                .form-input::placeholder {
-                    color: rgba(255, 255, 255, 0.7);
-                }
-
-                .form-input:focus {
-                    border-color: rgba(255, 255, 255, 0.6);
-                    background: rgba(255, 255, 255, 0.15);
-                    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-                }
-
-                .input-icon {
-                    position: absolute;
-                    right: 20px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    color: rgba(255, 255, 255, 0.6);
-                    font-size: 18px;
-                }
-
-                .forgot-link {
-                    color: rgba(255, 255, 255, 0.9);
-                    text-decoration: none;
-                    font-size: 14px;
-                    transition: color 0.3s ease;
-                    display: block;
-                    text-align: center;
-                    margin: 20px 0;
-                }
-
-                .forgot-link:hover {
-                    color: white;
-                    text-decoration: underline;
-                }
-
-                .login-button {
-                    width: 100%;
-                    padding: 15px;
-                    background: rgba(255, 255, 255, 0.9);
-                    color: #333;
-                    border: none;
-                    border-radius: 50px;
-                    font-size: 18px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    margin: 20px 0;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                    text-decoration: none;
-                    display: inline-block;
-                    box-sizing: border-box;
-                }
-
-                .login-button:hover {
-                    background: white;
-                    transform: translateY(-2px);
-                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-                    color: #333;
-                    text-decoration: none;
-                }
-
-                .register-text {
-                    color: rgba(255, 255, 255, 0.8);
-                    margin-top: 20px;
-                    font-size: 14px;
-                }
-
-                .register-link {
-                    color: white;
-                    text-decoration: underline;
-                    font-weight: bold;
-                    transition: color 0.3s ease;
-                }
-
-                .register-link:hover {
-                    color: #ffd700;
-                }
-            `}</style>
-
-            <div className="login-card">
-                <img src={logo} alt="Admin Logo" className="logo" />
-                <h2 className="login-title">Admin Login</h2>
-                
-                <form onSubmit={handleSubmit}>
-                    <div className="input-group">
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            placeholder="Email"
-                            className="form-input"
-                            required
-                        />
-                        <span className="input-icon"></span>
-                    </div>
-
-                    <div className="input-group">
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            placeholder="Password"
-                            className="form-input"
-                            required
-                        />
-                        <span className="input-icon"></span>
-                    </div>
-
-                    <Link to="/ForgotPassword" className="forgot-link">
-                        Forgot password?
-                    </Link>
-
-                    <Link to="/AdminDashboard" className="login-button">
-                        Login
-                    </Link>
-                </form>
-
-                <div className="register-text">
-                    Don't have an account? <Link to="/CreateAccount" className="register-link">Register</Link>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-export default Adminlogin;
+  } catch (err) {
+    console.error(err);
+    setMessage("Server error. Please try again.");
+  }
+};
