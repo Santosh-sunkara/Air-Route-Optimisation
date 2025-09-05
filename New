@@ -1,113 +1,29 @@
-package com.scb.axessspringboottraining.controller;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await axios.post("http://localhost:8080/api/users/userlogin", formData);
+    console.log("Login response:", res.data);
 
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.dao.UserRepository;
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.service.AdminProfileService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+    // case 1: backend returns plain string
+    if (typeof res.data === "string") {
+      setMessage(res.data);
 
-@RestController
-@RequestMapping("/api/admin/profile")
-@CrossOrigin("*") // React frontend
-public class AdminProfileController {
+      if (res.data.toLowerCase().includes("login successful")) {
+        navigate("/UserDashboard");
+      }
 
-    @Autowired
-    private AdminProfileService adminProfileService;
-    @Autowired
-    private Adminlogindata adminRepository;
-    @Autowired
-    private UserRepository userrepository;
-
-    // ✅ Get admin profile by email
-    @GetMapping("/{email}")
-    public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
-        System.out.println("Fetching profile for email: " + email);
-        return ResponseEntity.ok(adminProfileService.getAdminProfile(email));
+    } else if (res.data && res.data.email) {
+      // case 2: backend returns JSON object
+      localStorage.setItem("user", JSON.stringify(res.data));  // store entire user object
+      localStorage.setItem("email", res.data.email);           // also store only email separately if needed
+      setMessage("Login successful!");
+      navigate("/UserDashboard");
+    } else {
+      setMessage("Invalid login credentials");
     }
 
-    // ✅ Update admin profile
-    @PutMapping("/{email}")
-    public ResponseEntity<AdminLogin> updateProfile(
-            @PathVariable String email,
-            @RequestBody AdminLogin updatedProfile) {
-
-        System.out.println("Updating profile for email: " + email);
-        System.out.println("New details: " + updatedProfile);
-
-        return ResponseEntity.ok(adminProfileService.updateAdminProfile(email, updatedProfile));
-    }
-
-    // ✅ Active users (count of admins)
-    @GetMapping("/count")
-    public Integer getUserCount() {
-        return adminProfileService.getUserCount();
-    }
-
-    // ✅ Pending requests (users with empty department)
-    @GetMapping("/departmentcount")
-    public Integer getEmptyDepartmentCount() {
-        return adminProfileService.getEmptyDepartmentCount();
-    }
-}
-
-
-
-
-package com.scb.axessspringboottraining.service;
-
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.dao.UserRepository;
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
-
-import java.util.Optional;
-
-@Service
-public class AdminProfileServiceimp implements AdminProfileService {
-
-    @Autowired
-    private Adminlogindata adminlogindata;
-    @Autowired
-    private UserRepository userrepository;
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @Override
-    public AdminLogin getAdminProfile(String email) {
-        Optional<AdminLogin> userOpt = adminlogindata.findById(email);
-        if (userOpt.isPresent()) {
-            return userOpt.get();
-        }
-        throw new RuntimeException("User not found with email: " + email);
-    }
-
-    @Override
-    public AdminLogin updateAdminProfile(String email, AdminLogin updatedProfile) {
-        return adminlogindata.findById(email)
-                .map(existingProfile -> {
-                    existingProfile.setFirstname(updatedProfile.getFirstname());
-                    existingProfile.setLastname(updatedProfile.getLastname());
-                    existingProfile.setPassword(updatedProfile.getPassword());
-                    return adminlogindata.save(existingProfile); // Save to DB
-                })
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-    }
-
-    // ✅ Active users (count of admins)
-    @Override
-    public Integer getUserCount() {
-        return (int) adminlogindata.count();  // JPA repository count
-    }
-
-    // ✅ Pending requests (users with empty department)
-    @Override
-    public Integer getEmptyDepartmentCount() {
-        String sql = "SELECT COUNT(*) FROM user_logindata WHERE department = ''";
-        return jdbcTemplate.queryForObject(sql, Integer.class);
-    }
-}
+  } catch (err) {
+    console.error(err);
+    setMessage("Server error. Please try again.");
+  }
+};
