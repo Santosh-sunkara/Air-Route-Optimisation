@@ -1,253 +1,139 @@
-package com.scb.axessspringboottraining.controller;
+import React from "react";
+import "./AdminDashboard.css";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import logo from "../../Assests/sclogoshiva.png";
+import { Link } from "react-router-dom";
 
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.dao.UserRepository;
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.service.AdminProfileService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+function AdminDashboard() {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const userEmail = storedUser?.email || "admin1@sc.com";
+  const [userCount, setUserCount] = useState(0); // state for backend data
+  const [depCount, setdepCount] = useState(0); 
 
-@RestController
-@RequestMapping("/api/admin/profile")
-@CrossOrigin("*") // React frontend
-public class AdminProfileController {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+  });
+  useEffect(() => {
 
-    @Autowired
-    private AdminProfileService adminProfileService;
-    @Autowired
-    private Adminlogindata adminRepository;
-    @Autowired
-    private UserRepository userrepository;
+    axios
+      .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
+      .then((res) => {
+        console.log("Fetched profile:", res.data);
+        setFormData({
+          firstName: res.data.firstname || "",
+          lastName: res.data.lastname || ""
+        });
+      })
+      .catch((err) => {
+        console.error("Error fetching profile:", err);
+      });
+      axios
+      .get(`http://localhost:8080/api/admin/profile/count`) // backend endpoint
+      .then((res) => {
+        console.log("User count:", res.data);
+        setUserCount(res.data); // store in state
+      })
+      .catch((err) => {
+        console.error("Error fetching user count:", err);
+      });
+      axios
+      .get(`http://localhost:8080/api/admin/profile/departmentcount`) // backend endpoint
+      .then((res) => {
+        console.log(res)
+        console.log("User count:", res.data);
+        setdepCount(res.data); // store in state
+      })
+      .catch((err) => {
+        console.error("Error fetching user count:", err);
+      });
+  }, [userEmail]);
+  
 
-    // ✅ Get admin profile by email
-    @GetMapping("/{email}")
-    public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
-        System.out.println("Fetching profile for email: " + email);
-        return ResponseEntity.ok(adminProfileService.getAdminProfile(email));
-    }
 
-    // ✅ Update admin profile
-    @PutMapping("/{email}")
-    public ResponseEntity<AdminLogin> updateProfile(
-            @PathVariable String email,
-            @RequestBody AdminLogin updatedProfile) {
+  const handleLogout = () => {
+    localStorage.removeItem("user"); // clear session
+    window.location.href = "/"; // redirect to login/home
+  };
 
-        System.out.println("Updating profile for email: " + email);
-        System.out.println("New details: " + updatedProfile);
+  return (
+    <div className="dashboard-container">
+      {/* Top Bar */}
+      <header className="top-bar">
+        <div className="top-bar-left">
+          <h2>Admin Dashboard</h2>
+        </div>
+        <div className="top-bar-right">
+          <div className="profile-section">
+            <div className="profile-pic">
+              <img src="https://via.placeholder.com/40" alt="Profile" />
+            </div>
+            <span className="username">{formData.firstName} {formData.lastName}</span>
+            <button className="logout-btn" onClick={handleLogout}>
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
 
-        return ResponseEntity.ok(adminProfileService.updateAdminProfile(email, updatedProfile));
+      <div className="content-wrapper">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="logo-section">
+            <img src={logo} alt="Standard Chartered" className="logo" />
+          </div>
+          <div className="menu-section">
+            <ul>
+              <li className="active">Dashboard</li>
+              <li><Link to="/AdminUser" className="menu-link">User Management</Link></li>
+          
+              <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
+              <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
+              <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
+              <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
+            </ul>
+          </div>
+        </aside>
 
-    }
-    @GetMapping("/count")
-    public long getUserCount() {
-        return adminRepository.count();
-    }
-    @GetMapping("/depcount")
-    public long getdepcount(){
-        return adminRepository.count();
-    }
+        {/* Main Content */}
+        <main className="main-content">
+          {/* Stats Section */}
+          <section className="stats-section">
+            <div className="stat-card">
+              <h3>Active Users</h3>
+              <p className="stat-number">{userCount}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Pending Requests</h3>
+              <p className="stat-number">{depCount}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Recent Activity</h3>
+              <p className="stat-number">3</p>
+            </div>
+          </section>
 
+          {/* Recent Activities */}
+          <section className="recent-activities">
+            <h3>Recent Activities</h3>
+            <div className="activity-card">
+              <p><strong>Admin User</strong> removed a user from AD group</p>
+              <span>1 hour ago</span>
+            </div>
+            <div className="activity-card">
+              <p><strong>Admin User</strong> added a new report</p>
+              <span>3 hours ago</span>
+            </div>
+            <div className="activity-card">
+              <p><strong>Admin User</strong> assigned access to a user</p>
+              <span>1 day ago</span>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  );
 }
 
-
-
-package com.scb.axessspringboottraining.service;
-
-import com.scb.axessspringboottraining.entities.AdminLogin;
-
-public interface AdminProfileService {
-    AdminLogin getAdminProfile(String email);
-    AdminLogin updateAdminProfile(String email, AdminLogin updatedProfile);
-    Integer getUserCount();
-    Integer getEmptyDepartmentCount();
-
-}
-
-
-
-package com.scb.axessspringboottraining.service;
-
-import com.scb.axessspringboottraining.dao.Adminlogindata;
-import com.scb.axessspringboottraining.dao.UserRepository;
-import com.scb.axessspringboottraining.entities.AdminLogin;
-import com.scb.axessspringboottraining.entities.User;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
-
-import java.util.Optional;
-
-@Service
-public class AdminProfileServiceimp implements AdminProfileService {
-
-    @Autowired
-    private Adminlogindata adminlogindata;
-    @Autowired
-    private UserRepository userrepository;
-
-    @Override
-    public AdminLogin getAdminProfile(String email) {
-        Optional<AdminLogin> userOpt = adminlogindata.findById(email);
-        if (userOpt.isPresent()) {
-            return userOpt.get();
-        }
-        throw new RuntimeException("User not found with email: " + email);
-    }
-
-    @Override
-    public AdminLogin updateAdminProfile(String email, AdminLogin updatedProfile) {
-        return adminlogindata.findById(email)
-                .map(existingProfile -> {
-                    existingProfile.setFirstname(updatedProfile.getFirstname());
-                    existingProfile.setLastname(updatedProfile.getLastname());
-                    existingProfile.setPassword(updatedProfile.getPassword());
-                    return adminlogindata.save(existingProfile); // Save to DB
-                })
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-    }
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-
-
-
-    @Override
-    public Integer getUserCount() { String sql = "SELECT COUNT(*) FROM AdminLogin";
-        return jdbcTemplate.queryForObject(sql, Integer.class);
-
-    }
-    @Autowired
-    private JdbcTemplate jdbcTemplates;
-
-    @Override
-    public Integer getEmptyDepartmentCount() {
-        String sql="SELECT COUNT(*) FROM User WHERE department=''";
-        return jdbcTemplates.queryForObject(sql, Integer.class);
-
-    }
-}
-
-
-
-
-
-package com.scb.axessspringboottraining.entities;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
-import java.util.Arrays;
-
-@Entity
-@Table(name="user_logindata")
-public class User {
-
-    @Id
-    @Column(nullable = false,unique = true)
-    private String email;
-
-    private String firstname;
-    private String lastname;
-    private String accounttype;
-    private String password;
-
-    private String department="";
-    @Column(name = "bookmarks", columnDefinition = "text[]")
-    private String[] bookmarks;
-    @Column(name = "recent_files" , columnDefinition = "text[]")
-    private String[] recentFiles;
-
-    public User(){}
-
-    public User(String email, String firstname, String lastname, String accounttype, String password, String department, String[] bookmarks, String[] recentFiles) {
-        this.email = email;
-        this.firstname = firstname;
-        this.lastname = lastname;
-        this.accounttype = accounttype;
-        this.password = password;
-        this.department = department;
-        this.bookmarks = bookmarks;
-        this.recentFiles = recentFiles;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getFirstname() {
-        return firstname;
-    }
-
-    public void setFirstname(String firstname) {
-        this.firstname = firstname;
-    }
-
-    public String getLastname() {
-        return lastname;
-    }
-
-    public void setLastname(String lastname) {
-        this.lastname = lastname;
-    }
-
-    public String getAccounttype() {
-        return accounttype;
-    }
-
-    public void setAccounttype(String accounttype) {
-        this.accounttype = accounttype;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(String department) {
-        this.department = department;
-    }
-
-    public String[] getBookmarks() {
-        return bookmarks;
-    }
-
-    public void setBookmarks(String[] bookmarks) {
-        this.bookmarks = bookmarks;
-    }
-
-    public String[] getRecentFiles() {
-        return recentFiles;
-    }
-
-    public void setRecentFiles(String[] recentFiles) {
-        this.recentFiles = recentFiles;
-    }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "email='" + email + '\'' +
-                ", firstname='" + firstname + '\'' +
-                ", lastname='" + lastname + '\'' +
-                ", accounttype='" + accounttype + '\'' +
-                ", password='" + password + '\'' +
-                ", department='" + department + '\'' +
-                ", bookmarks=" + Arrays.toString(bookmarks) +
-                ", recentFiles=" + Arrays.toString(recentFiles) +
-                '}';
-    }
-}
+export default AdminDashboard;
