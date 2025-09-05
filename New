@@ -1,162 +1,117 @@
-import React from "react";
-import "./AdminDashboard.css";
-import { useState, useEffect } from "react";
-import axios from "axios";
-import logo from "../../Assests/sclogoshiva.png";
-import { Link } from "react-router-dom";
+package com.scb.axessspringboottraining.controller;
 
-function AdminDashboard() {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  const userEmail = storedUser?.email || "admin1@sc.com";
-  const [userCount, setUserCount] = useState(0); 
-  const [depCount, setdepCount] = useState(0);
+import com.scb.axessspringboottraining.dao.Adminlogindata;
+import com.scb.axessspringboottraining.dao.UserRepository;
+import com.scb.axessspringboottraining.entities.AdminLogin;
+import com.scb.axessspringboottraining.service.AdminProfileService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-  });
+@RestController
+@RequestMapping("/api/admin/profile")
+@CrossOrigin("*") // React frontend
+public class AdminProfileController {
 
-  useEffect(() => {
-    // ✅ Fetch admin profile
-    axios
-      .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
-      .then((res) => {
-        console.log("Fetched profile:", res.data);
-        setFormData({
-          firstName: res.data.firstname || "",
-          lastName: res.data.lastname || "",
-        });
-      })
-      .catch((err) => {
-        console.error("Error fetching profile:", err);
-      });
+    @Autowired
+    private AdminProfileService adminProfileService;
+    @Autowired
+    private Adminlogindata adminRepository;
+    @Autowired
+    private UserRepository userrepository;
 
-    // ✅ Active Users count
-    axios
-      .get(`http://localhost:8080/api/users/count`)
-      .then((res) => {
-        console.log("User count:", res.data);
-        setUserCount(res.data);
-      })
-      .catch((err) => {
-        console.error("Error fetching user count:", err);
-      });
+    // ✅ Get admin profile by email
+    @GetMapping("/{email}")
+    public ResponseEntity<AdminLogin> getProfile(@PathVariable String email) {
+        System.out.println("Fetching profile for email: " + email);
+        return ResponseEntity.ok(adminProfileService.getAdminProfile(email));
+    }
 
-    // ✅ Empty Department count (Pending Requests)
-    axios
-      .get(`http://localhost:8080/api/users/empty-department-count`)
-      .then((res) => {
-        console.log("Empty department count:", res.data);
-        setdepCount(res.data);
-      })
-      .catch((err) => {
-        console.error("Error fetching empty department count:", err);
-      });
-  }, [userEmail]);
+    // ✅ Update admin profile
+    @PutMapping("/{email}")
+    public ResponseEntity<AdminLogin> updateProfile(
+            @PathVariable String email,
+            @RequestBody AdminLogin updatedProfile) {
 
-  const handleLogout = () => {
-    localStorage.removeItem("user"); 
-    window.location.href = "/"; 
-  };
+        System.out.println("Updating profile for email: " + email);
+        System.out.println("New details: " + updatedProfile);
 
-  return (
-    <div className="dashboard-container">
-      {/* Top Bar */}
-      <header className="top-bar">
-        <div className="top-bar-left">
-          <h2>Admin Dashboard</h2>
-        </div>
-        <div className="top-bar-right">
-          <div className="profile-section">
-            <div className="profile-pic">
-              <img src="https://via.placeholder.com/40" alt="Profile" />
-            </div>
-            <span className="username">
-              {formData.firstName} {formData.lastName}
-            </span>
-            <button className="logout-btn" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+        return ResponseEntity.ok(adminProfileService.updateAdminProfile(email, updatedProfile));
+    }
 
-      <div className="content-wrapper">
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <div className="logo-section">
-            <img src={logo} alt="Standard Chartered" className="logo" />
-          </div>
-          <div className="menu-section">
-            <ul>
-              <li className="active">Dashboard</li>
-              <li>
-                <Link to="/AdminUser" className="menu-link">
-                  User Management
-                </Link>
-              </li>
-              <li>
-                <Link to="/ReportAccess" className="menu-link">
-                  Report Access
-                </Link>
-              </li>
-              <li>
-                <Link to="/Admindashboardsettings" className="menu-link">
-                  Settings
-                </Link>
-              </li>
-              <li>
-                <Link to="/Adminaccount" className="menu-link">
-                  Account
-                </Link>
-              </li>
-              <li>
-                <Link to="/Adminhelp" className="menu-link">
-                  Help
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </aside>
+    // ✅ Active users (count of admins)
+    @GetMapping("/count")
+    public Integer getUserCount() {
+        return adminProfileService.getUserCount();
+    }
 
-        {/* Main Content */}
-        <main className="main-content">
-          {/* Stats Section */}
-          <section className="stats-section">
-            <div className="stat-card">
-              <h3>Active Users</h3>
-              <p className="stat-number">{userCount}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Pending Requests</h3>
-              <p className="stat-number">{depCount}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Recent Activity</h3>
-              <p className="stat-number">3</p>
-            </div>
-          </section>
-
-          {/* Recent Activities */}
-          <section className="recent-activities">
-            <h3>Recent Activities</h3>
-            <div className="activity-card">
-              <p><strong>Admin User</strong> removed a user from AD group</p>
-              <span>1 hour ago</span>
-            </div>
-            <div className="activity-card">
-              <p><strong>Admin User</strong> added a new report</p>
-              <span>3 hours ago</span>
-            </div>
-            <div className="activity-card">
-              <p><strong>Admin User</strong> assigned access to a user</p>
-              <span>1 day ago</span>
-            </div>
-          </section>
-        </main>
-      </div>
-    </div>
-  );
+    // ✅ Pending requests (users with empty department)
+    @GetMapping("/departmentcount")
+    public Integer getEmptyDepartmentCount() {
+        return adminProfileService.getEmptyDepartmentCount();
+    }
 }
 
-export default AdminDashboard;
+
+
+
+
+
+package com.scb.axessspringboottraining.service;
+
+import com.scb.axessspringboottraining.dao.Adminlogindata;
+import com.scb.axessspringboottraining.dao.UserRepository;
+import com.scb.axessspringboottraining.entities.AdminLogin;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class AdminProfileServiceimp implements AdminProfileService {
+
+    @Autowired
+    private Adminlogindata adminlogindata;
+    @Autowired
+    private UserRepository userrepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Override
+    public AdminLogin getAdminProfile(String email) {
+        Optional<AdminLogin> userOpt = adminlogindata.findById(email);
+        if (userOpt.isPresent()) {
+            return userOpt.get();
+        }
+        throw new RuntimeException("User not found with email: " + email);
+    }
+
+    @Override
+    public AdminLogin updateAdminProfile(String email, AdminLogin updatedProfile) {
+        return adminlogindata.findById(email)
+                .map(existingProfile -> {
+                    existingProfile.setFirstname(updatedProfile.getFirstname());
+                    existingProfile.setLastname(updatedProfile.getLastname());
+                    existingProfile.setPassword(updatedProfile.getPassword());
+                    return adminlogindata.save(existingProfile); // Save to DB
+                })
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    }
+
+    // ✅ Active users (count of admins)
+    @Override
+    public Integer getUserCount() {
+        String sql = "SELECT COUNT(*) FROM admin_login"; // <-- your table name for AdminLogin
+        return jdbcTemplate.queryForObject(sql, Integer.class);
+    }
+
+    // ✅ Pending requests (users with empty department)
+    @Override
+    public Integer getEmptyDepartmentCount() {
+        String sql = "SELECT COUNT(*) FROM user_logindata WHERE department = ''";
+        return jdbcTemplate.queryForObject(sql, Integer.class);
+    }
+}
+
