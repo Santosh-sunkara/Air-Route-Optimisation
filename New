@@ -1,129 +1,27 @@
-import React from "react";
-import "./AdminDashboard.css";
-import { useState, useEffect } from "react";
-import axios from "axios";
-import logo from "../../Assests/sclogoshiva.png";
-import { Link } from "react-router-dom";
-import adprofile from "../../Assests/logo.png";
+<section className="recent-activities">
+  <h3>Welcome Admin</h3>
+  <p>
+    You are logged in as <strong>{formData.firstName} {formData.lastName}</strong>.  
+    From this dashboard, you have complete control over managing the system.  
+    You can view and monitor <strong>active users</strong>, handle <strong>pending requests</strong>,  
+    and configure <strong>settings</strong> as needed. The sidebar on the left will help you navigate  
+    quickly between user management, report access, and other administrative tools.
+  </p>
+  <p>
+    As an administrator, your role is to ensure that everything runs smoothly.  
+    You can assign roles, grant or revoke access, and keep track of all activities.  
+    Make sure to regularly review requests and maintain up-to-date records.  
+    This dashboard is designed to give you real-time visibility and control so you  
+    can make informed decisions without delay.
+  </p>
+</section>
 
-function AdminDashboard() {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  const userEmail = storedUser?.email || "admin1@sc.com";
-  const [userCount, setUserCount] = useState(0); // state for backend data
-  const [depCount, setdepCount] = useState(0);
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-  });
 
-  useEffect(() => {
-    axios
-      .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
-      .then((res) => {
-        console.log("Fetched profile:", res.data);
-        setFormData({
-          firstName: res.data.firstname || "",
-          lastName: res.data.lastname || ""
-        });
-      })
-      .catch((err) => {
-        console.error("Error fetching profile:", err);
-      });
 
-    axios
-      .get(`http://localhost:8080/api/admin/profile/count`) // backend endpoint
-      .then((res) => {
-        console.log("User count:", res.data);
-        setUserCount(res.data); // store in state
-      })
-      .catch((err) => {
-        console.error("Error fetching user count:", err);
-      });
-
-    axios
-      .get(`http://localhost:8080/api/admin/profile/departmentcount`) // backend endpoint
-      .then((res) => {
-        console.log(res);
-        console.log("User count:", res.data);
-        setdepCount(res.data); // store in state
-      })
-      .catch((err) => {
-        console.error("Error fetching user count:", err);
-      });
-  }, [userEmail]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user"); // clear session
-    window.location.href = "/"; // redirect to login/home
-  };
-
-  return (
-    <div className="dashboard-container">
-      {/* Top Bar */}
-      <header className="top-bar">
-        <div className="top-bar-left">
-          <h2>Admin Dashboard</h2>
-        </div>
-        <div className="top-bar-right">
-          <div className="profile-section">
-            <div className="profile-pic">
-              <img src={adprofile} alt="Profile" />
-            </div>
-            <span className="username">{formData.firstName} {formData.lastName}</span>
-            <button className="logout-btn" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="content-wrapper">
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <div className="logo-section">
-            <img src={logo} alt="Standard Chartered" className="logo" />
-          </div>
-          <div className="menu-section">
-            <ul>
-              <li className="active">Dashboard</li>
-              <li><Link to="/AdminUser" className="menu-link">User Management</Link></li>
-              <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
-              <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
-              <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
-              <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
-            </ul>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="main-content">
-          {/* Stats Section */}
-          <section className="stats-section">
-            <div className="stat-card">
-              <h3>Active Users</h3>
-              <p className="stat-number">{userCount}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Pending Requests</h3>
-              <p className="stat-number">{depCount}</p>
-            </div>
-            {/* Removed Recent Activity stat card */}
-          </section>
-
-          {/* Welcome Section instead of Recent Activities */}
-          <section className="recent-activities">
-            <h3>Welcome Admin</h3>
-            <p>
-              You are logged in as <strong>{formData.firstName} {formData.lastName}</strong>.  
-              From this dashboard, you can manage users, review pending requests,  
-              and configure system settings. Use the left navigation menu to get started.
-            </p>
-          </section>
-        </main>
-      </div>
-    </div>
-  );
+.recent-activities p {
+  font-size: 15px;
+  color: #444;
+  line-height: 1.7;
+  margin: 0 0 15px 0; /* space between paragraphs */
 }
-
-export default AdminDashboard;
