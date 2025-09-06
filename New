@@ -229,11 +229,12 @@
   min-width: 100px;
 }
 
+/* Updated: No underline on contact links */
 .contact-link {
   background: none;
   border: none;
   color: #000;
-  text-decoration: underline;
+  text-decoration: none;   /* 🚀 removed underline */
   cursor: pointer;
   font-size: 14px;
   padding: 0;
@@ -244,7 +245,7 @@
 
 .contact-link:hover {
   color: #333;
-  text-decoration: none;
+  text-decoration: underline; /* only on hover */
 }
 
 .hours {
@@ -306,12 +307,13 @@
   gap: 25px;
 }
 
+/* Updated: Removed border-left line */
 .faq-item {
   padding: 20px;
   background-color: #fafafa;
   border-radius: 8px;
-  border-left: 4px solid #666;
   transition: all 0.3s ease;
+  border-left: none;  /* 🚀 removed */
 }
 
 .faq-item:hover {
