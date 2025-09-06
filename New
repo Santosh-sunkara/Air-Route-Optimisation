@@ -1,27 +1,701 @@
-<section className="recent-activities">
-  <h3>Welcome Admin</h3>
-  <p>
-    You are logged in as <strong>{formData.firstName} {formData.lastName}</strong>.  
-    From this dashboard, you have complete control over managing the system.  
-    You can view and monitor <strong>active users</strong>, handle <strong>pending requests</strong>,  
-    and configure <strong>settings</strong> as needed. The sidebar on the left will help you navigate  
-    quickly between user management, report access, and other administrative tools.
-  </p>
-  <p>
-    As an administrator, your role is to ensure that everything runs smoothly.  
-    You can assign roles, grant or revoke access, and keep track of all activities.  
-    Make sure to regularly review requests and maintain up-to-date records.  
-    This dashboard is designed to give you real-time visibility and control so you  
-    can make informed decisions without delay.
-  </p>
-</section>
+import React from "react";
+import "./Adminhelp.css";
+import axios from "axios";
+import logo from "../../Assests/sclogoshiva.png";
+import { Link } from "react-router-dom";
+import adprofile from "../../Assests/logo.png";
+import { useEffect, useState } from "react";
 
 
 
 
-.recent-activities p {
-  font-size: 15px;
-  color: #444;
-  line-height: 1.7;
-  margin: 0 0 15px 0; /* space between paragraphs */
+function Help() {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const userEmail = storedUser?.email ;
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+  });
+  useEffect(() => {
+    axios
+      .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
+      .then((res) => {
+        console.log("Fetched profile:", res.data);
+        setFormData({
+          firstName: res.data.firstname || "",
+          lastName: res.data.lastname || ""
+        });
+      })
+      .catch((err) => {
+        console.error("Error fetching profile:", err);
+      });
+  }, [userEmail]);
+  const contactInfo = {
+    emergency: {
+      title: "Emergency Support",
+      phone: "+65 6596 7000",
+      email: "emergency.support@sc.com",
+      hours: "24/7 Available"
+    },
+    technical: {
+      title: "Technical Support",
+      phone: "+65 6596 7100",
+      email: "tech.support@sc.com",
+      hours: "Monday - Friday: 8:00 AM - 6:00 PM"
+    },
+    website: {
+      title: "Website Issues",
+      email: "website.issues@sc.com",
+      responseTime: "Within 24 hours"
+    },
+    customerCare: {
+      title: "Customer Care",
+      phone: "+65 6596 7777",
+      email: "customer.care@sc.com",
+      hours: "Monday - Friday: 8:00 AM - 8:00 PM, Saturday: 8:00 AM - 1:00 PM"
+    }
+  };
+
+  const handleEmailClick = (email) => {
+    window.location.href = `mailto:${email}`;
+  };
+
+  const handlePhoneClick = (phone) => {
+    window.location.href = `tel:${phone}`;
+  };
+
+  return (
+    <div className="help-container">
+      <header className="top-bar">
+        <div className="top-bar-left">
+          <h2>Settings</h2>
+        </div>
+        <div className="top-bar-right">
+          <div className="profile-section">
+            <div className="profile-pic">
+              <img src={adprofile} alt="Profile" />
+            </div>
+            <span className="username">
+              {formData.firstName} {formData.lastName}
+            </span>
+            <button
+              className="logout-btn"
+              onClick={() => {
+                localStorage.removeItem("user");
+                window.location.href = "/"; // redirect to login
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+
+      <div className="content-wrapper">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="logo-section">
+            <img src={logo} alt="Standard Chartered" className="logo" />
+          </div>
+          <div className="menu-section">
+            <ul>
+              <li><Link to="/AdminDashboard" className="menu-link">Dashboard</Link></li>
+              <li><Link to="/AdminUser" className="menu-link">User Management</Link></li>
+
+              <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
+              <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
+              <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
+              <li className="active">Help</li>
+            </ul>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="main-content">
+          <div className="help-header">
+            <h1>Need Assistance?</h1>
+            <p>Get in touch with our support team for any issues or questions</p>
+          </div>
+
+          <div className="contact-grid">
+            {/* Emergency Support */}
+            <div className="contact-card priority">
+              <div className="card-icon emergency">Act Fast</div>
+              <h3>{contactInfo.emergency.title}</h3>
+              <div className="contact-details">
+                <div className="contact-item">
+                  <span className="label">Phone:</span>
+                  <button
+                    className="contact-link phone"
+                    onClick={() => handlePhoneClick(contactInfo.emergency.phone)}
+                  >
+                    {contactInfo.emergency.phone}
+                  </button>
+                </div>
+                <div className="contact-item">
+                  <span className="label">Email:</span>
+                  <button
+                    className="contact-link email"
+                    onClick={() => handleEmailClick(contactInfo.emergency.email)}
+                  >
+                    {contactInfo.emergency.email}
+                  </button>
+                </div>
+                <div className="contact-item">
+                  <span className="label">Availability:</span>
+                  <span className="hours emergency-hours">{contactInfo.emergency.hours}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Technical Support */}
+            <div className="contact-card">
+              <div className="card-icon technical">Our Solution</div>
+              <h3>{contactInfo.technical.title}</h3>
+              <div className="contact-details">
+                <div className="contact-item">
+                  <span className="label">Phone:</span>
+                  <button
+                    className="contact-link phone"
+                    onClick={() => handlePhoneClick(contactInfo.technical.phone)}
+                  >
+                    {contactInfo.technical.phone}
+                  </button>
+                </div>
+                <div className="contact-item">
+                  <span className="label">Email:</span>
+                  <button
+                    className="contact-link email"
+                    onClick={() => handleEmailClick(contactInfo.technical.email)}
+                  >
+                    {contactInfo.technical.email}
+                  </button>
+                </div>
+                <div className="contact-item">
+                  <span className="label">Hours:</span>
+                  <span className="hours">{contactInfo.technical.hours}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Website Issues */}
+            <div className="contact-card">
+              <div className="card-icon website">Our Watch</div>
+              <h3>{contactInfo.website.title}</h3>
+              <div className="contact-details">
+                <div className="contact-item">
+                  <span className="label">Email:</span>
+                  <button
+                    className="contact-link email"
+                    onClick={() => handleEmailClick(contactInfo.website.email)}
+                  >
+                    {contactInfo.website.email}
+                  </button>
+                </div>
+                <div className="contact-item">
+                  <span className="label">Response Time:</span>
+                  <span className="hours">{contactInfo.website.responseTime}</span>
+                </div>
+                <div className="website-note">
+                  <p>For website-related issues, please include:</p>
+                  <ul>
+                    <li>Browser and version</li>
+                    <li>Screenshot of the issue</li>
+                    <li>Steps to reproduce</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Customer Care */}
+            <div className="contact-card">
+              <div className="card-icon customer">Call</div>
+              <h3>{contactInfo.customerCare.title}</h3>
+              <div className="contact-details">
+                <div className="contact-item">
+                  <span className="label">Phone:</span>
+                  <button
+                    className="contact-link phone"
+                    onClick={() => handlePhoneClick(contactInfo.customerCare.phone)}
+                  >
+                    {contactInfo.customerCare.phone}
+                  </button>
+                </div>
+                <div className="contact-item">
+                  <span className="label">Email:</span>
+                  <button
+                    className="contact-link email"
+                    onClick={() => handleEmailClick(contactInfo.customerCare.email)}
+                  >
+                    {contactInfo.customerCare.email}
+                  </button>
+                </div>
+                <div className="contact-item">
+                  <span className="label">Hours:</span>
+                  <span className="hours">{contactInfo.customerCare.hours}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="faq-section">
+            <h2>Frequently Asked Questions</h2>
+            <div className="faq-grid">
+              <div className="faq-item">
+                <h4>How do I reset my password?</h4>
+                <p>Navigate to Settings → Profile Settings and click "Edit Profile" to change your password.</p>
+              </div>
+              <div className="faq-item">
+                <h4>How do I assign users to AD groups?</h4>
+                <p>Go to Settings → User Management, select a user and AD group, then click "Assign Access".</p>
+              </div>
+              <div className="faq-item">
+                <h4>How do I manage report access?</h4>
+                <p>Use the Report Access section to assign specific reports to users and set their access levels.</p>
+              </div>
+              <div className="faq-item">
+                <h4>What if the system is slow or unresponsive?</h4>
+                <p>Contact Technical Support immediately. Clear your browser cache and try again while waiting for assistance.</p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default Help;
+
+
+
+
+
+
+/* Help Container */
+.help-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f4f6f8;
+  font-family: Arial, sans-serif;
+}
+
+/* Top Bar */
+.top-bar {
+  background-color: #003366;
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.top-bar-left h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.profile-pic img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.username {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #45a049;
+}
+
+/* Content Wrapper */
+.content-wrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: white;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-section {
+  background-color: white;
+  text-align: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.logo {
+  width: 180px;
+  max-width: 100%;
+}
+
+.menu-section {
+  flex: 1;
+  background-color: white;
+  padding: 0;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  padding: 15px 25px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.sidebar li:hover {
+  background-color: #f8f9fa;
+  color: #0055a5;
+}
+
+.sidebar li.active {
+  background-color: #0055a5;
+  color: white;
+  border-left: 4px solid #4CAF50;
+}
+
+.menu-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.menu-link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  background-color: #f4f6f8;
+}
+
+/* Help Header */
+.help-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.help-header h1 {
+  color: #333;
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.help-header p {
+  color: #666;
+  font-size: 18px;
+  margin: 0;
+}
+
+/* Contact Grid */
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 25px;
+  margin-bottom: 50px;
+}
+
+/* Contact Cards */
+.contact-card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.contact-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.contact-card.priority {
+  border-color: #dc3545;
+  background: linear-gradient(135deg, #fff5f5, #ffffff);
+}
+
+.contact-card.priority:hover {
+  border-color: #dc3545;
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.2);
+}
+
+/* Card Icons */
+.card-icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 20px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-icon.emergency {
+  color: #dc3545;
+}
+
+.card-icon.technical {
+  color: #0055a5;
+}
+
+.card-icon.website {
+  color: #28a745;
+}
+
+.card-icon.customer {
+  color: #ffc107;
+}
+
+.contact-card h3 {
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+/* Contact Details */
+/* .contact-details {
+  space-y: 15px;
+} */
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.contact-item:last-child {
+  border-bottom: none;
+}
+
+.contact-item .label {
+  font-weight: 600;
+  color: #666;
+  font-size: 14px;
+  min-width: 100px;
+}
+
+.contact-link {
+  background: none;
+  border: none;
+  color: #0055a5;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  text-align: right;
+  flex: 1;
+  margin-left: 10px;
+}
+
+.contact-link:hover {
+  color: #004494;
+  text-decoration: none;
+}
+
+.contact-link.phone {
+  color: #28a745;
+}
+
+.contact-link.phone:hover {
+  color: #1e7e34;
+}
+
+.hours {
+  color: #333;
+  font-size: 14px;
+  text-align: right;
+  flex: 1;
+  margin-left: 10px;
+}
+
+.emergency-hours {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+/* Website Note */
+.website-note {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+}
+
+.website-note p {
+  margin: 0 0 10px 0;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.website-note ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.website-note li {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+/* FAQ Section */
+.faq-section {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.faq-section h2 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 30px 0;
+  text-align: center;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+}
+
+.faq-item {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #0055a5;
+  transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+  background-color: #e9ecef;
+  transform: translateX(5px);
+}
+
+.faq-item h4 {
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
+
+.faq-item p {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content-wrapper {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+  }
+  
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .faq-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .contact-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .contact-link, .hours {
+    text-align: left;
+    margin-left: 0;
+  }
+  
+  .help-header h1 {
+    font-size: 24px;
+  }
+  
+  .help-header p {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 20px;
+  }
+  
+  .contact-card, .faq-section {
+    padding: 20px;
+  }
+  
+  .card-icon {
+    font-size: 36px;
+    height: 50px;
+  }
 }
