@@ -1,55 +1,78 @@
-import React, { useEffect, useState } from "react";
-import "./Adminaccount.css";
+import React from "react";
+import "./AdminDashboard.css";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import logo from "../../Assests/sclogoshiva.png";
 import { Link } from "react-router-dom";
-import adprofile from "../../Assests/logo.png"
+import adprofile from "../../Assests/logo.png";
 
-function Account() {
-  const [adminDetails, setAdminDetails] = useState(null);
 
+function AdminDashboard() {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const userEmail = storedUser?.email || "admin1@sc.com";
+  const [userCount, setUserCount] = useState(0); // state for backend data
+  const [depCount, setdepCount] = useState(0); 
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+  });
   useEffect(() => {
-  
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (!storedUser || !storedUser.email) {
-      console.error("No logged in user found");
-      return;
-    }
 
-    fetch(`http://localhost:8080/api/admin/profile/${storedUser.email}`)
+    axios
+      .get(`http://localhost:8080/api/admin/profile/${userEmail}`)
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch profile");
-        return res.json();
+        console.log("Fetched profile:", res.data);
+        setFormData({
+          firstName: res.data.firstname || "",
+          lastName: res.data.lastname || ""
+        });
       })
-      .then((data) => setAdminDetails(data))
-      .catch((err) => console.error("Error:", err));
-  }, []);
+      .catch((err) => {
+        console.error("Error fetching profile:", err);
+      });
+      axios
+      .get(`http://localhost:8080/api/admin/profile/count`) // backend endpoint
+      .then((res) => {
+        console.log("User count:", res.data);
+        setUserCount(res.data); // store in state
+      })
+      .catch((err) => {
+        console.error("Error fetching user count:", err);
+      });
+      axios
+      .get(`http://localhost:8080/api/admin/profile/departmentcount`) // backend endpoint
+      .then((res) => {
+        console.log(res)
+        console.log("User count:", res.data);
+        setdepCount(res.data); // store in state
+      })
+      .catch((err) => {
+        console.error("Error fetching user count:", err);
+      });
+  }, [userEmail]);
+  
 
-  if (!adminDetails) {
-    return <p>Loading account details...</p>;
-  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("user"); // clear session
+    window.location.href = "/"; // redirect to login/home
+  };
 
   return (
-    <div className="account-container">
+    <div className="dashboard-container">
       {/* Top Bar */}
       <header className="top-bar">
         <div className="top-bar-left">
-          <h2>Account Information</h2>
+          <h2>Admin Dashboard</h2>
         </div>
         <div className="top-bar-right">
           <div className="profile-section">
             <div className="profile-pic">
-              <img src="{adprofile}" alt="Profile" />
+              <img src={adprofile} alt="Profile" />
             </div>
-            <span className="username">
-              {adminDetails.firstname} {adminDetails.lastname}
-            </span>
-            <button
-              className="logout-btn"
-              onClick={() => {
-                localStorage.removeItem("user");
-                window.location.href = "/"; // redirect to login
-              }}
-            >
+            <span className="username">{formData.firstName} {formData.lastName}</span>
+            <button className="logout-btn" onClick={handleLogout}>
               Logout
             </button>
           </div>
@@ -64,114 +87,284 @@ function Account() {
           </div>
           <div className="menu-section">
             <ul>
-              <li>
-                <Link to="/AdminDashboard" className="menu-link">
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link to="/AdminUser" className="menu-link">
-                  User Management
-                </Link>
-              </li>
-              <li>
-                <Link to="/ReportAccess" className="menu-link">
-                  Report Access
-                </Link>
-              </li>
-              <li>
-                <Link to="/Admindashboardsettings" className="menu-link">
-                  Settings
-                </Link>
-              </li>
-              <li className="active">Account</li>
-              <li>
-                <Link to="/Adminhelp" className="menu-link">
-                  Help
-                </Link>
-              </li>
+              <li className="active">Dashboard</li>
+              <li><Link to="/AdminUser" className="menu-link">User Management</Link></li>
+          
+              <li><Link to="/ReportAccess" className="menu-link">Report Access</Link></li>
+              <li><Link to="/Admindashboardsettings" className="menu-link">Settings</Link></li>
+              <li><Link to="/Adminaccount" className="menu-link">Account</Link></li>
+              <li><Link to="/Adminhelp" className="menu-link">Help</Link></li>
             </ul>
           </div>
         </aside>
 
         {/* Main Content */}
         <main className="main-content">
-          <div className="account-overview">
-            <div className="profile-header">
-              <div className="profile-avatar">
-                <img
-                  src="https://via.placeholder.com/120"
-                  alt="Admin Profile"
-                />
-              </div>
-              <div className="profile-info">
-                <h1>
-                  {adminDetails.firstname} {adminDetails.lastname}
-                </h1>
-                <p className="role">{adminDetails.accounttype}</p>
-                <span className="status-badge active">
-                  {adminDetails.status}
-                </span>
-              </div>
+          {/* Stats Section */}
+          <section className="stats-section">
+            <div className="stat-card">
+              <h3>Active Users</h3>
+              <p className="stat-number">{userCount}</p>
             </div>
-          </div>
-
-          <div className="account-details">
-            <div className="details-grid">
-              <div className="details-card">
-                <h3>Personal Information</h3>
-                <div className="detail-item">
-                  <label>First Name:</label>
-                  <span>{adminDetails.firstname}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Last Name:</label>
-                  <span>{adminDetails.lastname}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Email Address:</label>
-                  <span>{adminDetails.email}</span>
-                </div>
-              </div>
-
-              <div className="details-card">
-                <h3>Account Details</h3>
-                <div className="detail-item">
-                  <label>Account Type:</label>
-                  <span>{adminDetails.accounttype}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Status:</label>
-                  <span>{adminDetails.status}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Recent Activity:</label>
-                  <span>
-                    {adminDetails.recentactivity || "No recent activity"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="details-card">
-                <h3>Quick Actions</h3>
-                <div className="action-buttons">
-                  <Link to="/Admindashboardsettings" className="action-btn">
-                    Edit Profile
-                  </Link>
-                  <button className="action-btn secondary">
-                    Change Password
-                  </button>
-                  <button className="action-btn secondary">
-                    Download Account Data
-                  </button>
-                </div>
-              </div>
+            <div className="stat-card">
+              <h3>Pending Requests</h3>
+              <p className="stat-number">{depCount}</p>
             </div>
-          </div>
+            <div className="stat-card">
+              <h3>Recent Activity</h3>
+              <p className="stat-number">3</p>
+            </div>
+          </section>
+
+          {/* Recent Activities */}
+          <section className="recent-activities">
+            <h3>Recent Activities</h3>
+            <div className="activity-card">
+              <p><strong>Admin User</strong> removed a user from AD group</p>
+              <span>1 hour ago</span>
+            </div>
+            <div className="activity-card">
+              <p><strong>Admin User</strong> added a new report</p>
+              <span>3 hours ago</span>
+            </div>
+            <div className="activity-card">
+              <p><strong>Admin User</strong> assigned access to a user</p>
+              <span>1 day ago</span>
+            </div>
+          </section>
         </main>
       </div>
     </div>
   );
 }
 
-export default Account;
+export default AdminDashboard;
+
+
+
+
+
+
+/* Dashboard Container */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f4f6f8;
+}
+
+/* Top Bar */
+.top-bar {
+  background-color: #003366;
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.top-bar-left h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.profile-pic img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.username {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #45a049;
+}
+
+/* Content Wrapper */
+.content-wrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: white;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Logo section */
+.logo-section {
+  background-color: white;
+  text-align: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.logo {
+  width: 180px;
+  max-width: 100%;
+}
+
+/* Menu section */
+.menu-section {
+  flex: 1;
+  background-color: white;
+  padding: 0;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  padding: 15px 25px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.sidebar li:hover {
+  background-color: #f8f9fa;
+  color: #0055a5;
+}
+
+.sidebar li.active {
+  background-color: #0055a5;
+  color: white;
+  border-left: 4px solid #4CAF50;
+}
+
+.menu-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.menu-link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  background-color: #f4f6f8;
+}
+
+/* Stats Section */
+.stats-section {
+  display: flex;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  flex: 1;
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-card h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  color: #4CAF50;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Recent Activities */
+.recent-activities {
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.recent-activities h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.activity-card {
+  background-color: #f8f9fa;
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border-left: 4px solid #0055a5;
+  transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+  background-color: #e9ecef;
+  transform: translateX(5px);
+}
+
+.activity-card:last-child {
+  margin-bottom: 0;
+}
+
+.activity-card p {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.activity-card span {
+  color: #666;
+  font-size: 12px;
+  font-style: italic;
+}
